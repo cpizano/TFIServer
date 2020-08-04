@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 
 namespace TFIServer
 {
@@ -13,6 +14,7 @@ namespace TFIServer
         public int id;
         public TCP tcp;
         public UDP udp;
+        public Player player;
         
         public Client(int _id)
         {
@@ -153,7 +155,6 @@ namespace TFIServer
             {
                 // Called after receiving the first 'dummy' udp packet from client.
                 endPoint = _endPoint;
-                ServerSend.UDPTest(id);
             }
 
             public void SendData(Packet _packet)
@@ -176,6 +177,33 @@ namespace TFIServer
                 });
             }
         }
+
+        public void SendIntoGame(string _playerName)
+        {
+            player = new Player(id, _playerName, new Vector3(0, 0, 0));
+
+            // Tell new player about all other players excluding self.
+            foreach (Client _client in Server.clients.Values)
+            {
+                if (_client.player != null)
+                {
+                    if (_client.id != id)
+                    {
+                        ServerSend.SpawnPlayer(id, _client.player);
+                    }
+                }
+            }
+
+            // Tell all players about new player.
+            foreach (Client _client in Server.clients.Values)
+            {
+                if (_client.player != null)
+                {
+                    ServerSend.SpawnPlayer(_client.id, player);
+                }
+            }
+        }
     }
+
 }
 
