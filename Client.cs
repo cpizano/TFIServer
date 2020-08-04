@@ -73,9 +73,9 @@ namespace TFIServer
                 try
                 {
                     int _byteLenght = stream.EndRead(result);
-                    if (_byteLenght < 0)
+                    if (_byteLenght <= 0)
                     {
-                        // TODO: disconnect.
+                        Server.clients[id].Disconnect();
                         return;
                     }
 
@@ -89,7 +89,7 @@ namespace TFIServer
                 catch (Exception _ex)
                 {
                     Console.WriteLine($"Error receiving data: {_ex}.");
-                    // TODO: disconnect client.
+                    Server.clients[id].Disconnect();
                 }
             }
 
@@ -138,6 +138,14 @@ namespace TFIServer
 
                 return false;
             }
+            public void Disconnect()
+            {
+                socket.Close();
+                stream = null;
+                receivedData = null;
+                receiveBuffer = null;
+                socket = null;
+            }
         }
 
         public class UDP
@@ -176,6 +184,10 @@ namespace TFIServer
                     }
                 });
             }
+            public void Disconnect()
+            {
+                endPoint = null;
+            }
         }
 
         public void SendIntoGame(string _playerName)
@@ -202,6 +214,15 @@ namespace TFIServer
                     ServerSend.SpawnPlayer(_client.id, player);
                 }
             }
+        }
+        private void Disconnect()
+        {
+            Console.WriteLine($"{ player.id} has disconnected.");
+
+            player = null;
+
+            tcp.Disconnect();
+            udp.Disconnect();
         }
     }
 
