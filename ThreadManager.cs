@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace TFIServer
 {
@@ -16,8 +15,7 @@ namespace TFIServer
         {
             if (_action == null)
             {
-                Console.WriteLine("No action to execute on main thread!");
-                return;
+                throw new System.InvalidOperationException("action cannot be null");
             }
 
             lock (executeOnMainThread)
@@ -30,6 +28,7 @@ namespace TFIServer
         /// <summary>Executes all code meant to run on the main thread. NOTE: Call this ONLY from the main thread.</summary>
         public static void UpdateFromNetwork(GameLogic game)
         {
+            // Is this pattern correct? we are reading is boolean outside the lock.
             if (actionToExecuteOnMainThread)
             {
                 executeCopiedOnMainThread.Clear();
