@@ -49,6 +49,12 @@ namespace TFIServer
             Move(_inputDirection, game);
         }
 
+        public bool Hit(Vector3 _point)
+        {
+            var _delta = position - _point;
+            return _delta.LengthSquared() < Constants.HIT_RADIUS_SQR;
+        }
+
         private void Move(Vector2 _inputDirection, GameLogic game)
         {
             // For 3D, Z is forward (towards screen) and +Y is up.
