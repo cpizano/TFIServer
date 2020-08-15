@@ -6,13 +6,13 @@ namespace TFIServer
 {
     class ThreadManager
     {
-        private static readonly List<Action> executeOnMainThread = new List<Action>();
-        private static readonly List<Action> executeCopiedOnMainThread = new List<Action>();
+        private static readonly List<Action<GameLogic>> executeOnMainThread = new List<Action<GameLogic>>();
+        private static readonly List<Action<GameLogic>> executeCopiedOnMainThread = new List<Action<GameLogic>>();
         private static bool actionToExecuteOnMainThread = false;
 
         /// <summary>Sets an action to be executed on the main thread.</summary>
         /// <param name="_action">The action to be executed on the main thread.</param>
-        public static void ExecuteOnMainThread(Action _action)
+        public static void ExecuteOnMainThread(Action<GameLogic> _action)
         {
             if (_action == null)
             {
@@ -28,7 +28,7 @@ namespace TFIServer
         }
 
         /// <summary>Executes all code meant to run on the main thread. NOTE: Call this ONLY from the main thread.</summary>
-        public static void UpdateMain()
+        public static void UpdateFromNetwork(GameLogic game)
         {
             if (actionToExecuteOnMainThread)
             {
@@ -42,7 +42,7 @@ namespace TFIServer
 
                 for (int i = 0; i < executeCopiedOnMainThread.Count; i++)
                 {
-                    executeCopiedOnMainThread[i]();
+                    executeCopiedOnMainThread[i](game);
                 }
             }
         }

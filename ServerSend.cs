@@ -4,59 +4,10 @@ using System.Text;
 
 namespace TFIServer
 {
+    // These methods are called from multiple threads. Don't add state here.
     class ServerSend
     {
-        private static void SendTCPData(int _toClient, Packet packet)
-        {
-            packet.WriteLength();
-            Server.clients[_toClient].tcp.SendData(packet);
-        }
-
-        private static void SendUDPData(int _toClient, Packet _packet)
-        {
-            _packet.WriteLength();
-            Server.clients[_toClient].udp.SendData(_packet);
-        }
-
-        private static void SendTCPDataToAll(Packet _packet)
-        {
-            _packet.WriteLength();
-            for (int i = 1; i <= Server.MaxPlayers; i++)
-            {
-                Server.clients[i].tcp.SendData(_packet);
-            }
-        }
-        private static void SendTCPDataToAll(int _exceptClient, Packet _packet)
-        {
-            _packet.WriteLength();
-            for (int i = 1; i <= Server.MaxPlayers; i++)
-            {
-                if (i != _exceptClient)
-                {
-                    Server.clients[i].tcp.SendData(_packet);
-                }
-            }
-        }
-
-        private static void SendUDPDataToAll(Packet _packet)
-        {
-            _packet.WriteLength();
-            for (int i = 1; i <= Server.MaxPlayers; i++)
-            {
-                Server.clients[i].udp.SendData(_packet);
-            }
-        }
-        private static void SendUDPDataToAll(int _exceptClient, Packet _packet)
-        {
-            _packet.WriteLength();
-            for (int i = 1; i <= Server.MaxPlayers; i++)
-            {
-                if (i != _exceptClient)
-                {
-                    Server.clients[i].udp.SendData(_packet);
-                }
-            }
-        }
+    
 
         #region Packets
         public static void Welcome(int _toClient, string _msg)
@@ -66,7 +17,7 @@ namespace TFIServer
                 _packet.Write(_msg);
                 _packet.Write(_toClient);
 
-                SendTCPData(_toClient, _packet);
+                Server.SendTCPData(_toClient, _packet);
             }
         }
         public static void SpawnPlayer(int _toClient, Player _player)
@@ -78,7 +29,7 @@ namespace TFIServer
                 _packet.Write(_player.position);
                 _packet.Write(_player.rotation);
 
-                SendTCPData(_toClient, _packet);
+                Server.SendTCPData(_toClient, _packet);
             }
         }
 
@@ -89,7 +40,7 @@ namespace TFIServer
                 _packet.Write(_player.id);
                 _packet.Write(_player.position);
 
-                SendUDPDataToAll(_packet);
+                Server.SendUDPDataToAll(0, _packet);
             }
         }
 
@@ -100,7 +51,7 @@ namespace TFIServer
                 _packet.Write(_player.id);
                 _packet.Write(_player.rotation);
 
-                SendUDPDataToAll(_player.id, _packet);
+                Server.SendUDPDataToAll(_player.id, _packet);
             }
         }
 

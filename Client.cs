@@ -14,7 +14,6 @@ namespace TFIServer
         public int id;
         public TCP tcp;
         public UDP udp;
-        public Player player;
         
         public Client(int _id)
         {
@@ -49,8 +48,12 @@ namespace TFIServer
 
                 stream.BeginRead(receiveBuffer, 0, dataBufferSize, new AsyncCallback(ReceiveCallback), null);
 
-                Console.WriteLine($"client {id} connected. Greeting now.");
-                ServerSend.Welcome(id, "TFI-Hello");
+                Console.WriteLine($"= client {id} via {socket.Client.RemoteEndPoint}");
+
+                ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
+                {
+                    _game.Connect(id);
+                });
             }
 
             public void SendData(Packet _packet)
@@ -75,7 +78,7 @@ namespace TFIServer
                     int _byteLenght = stream.EndRead(result);
                     if (_byteLenght <= 0)
                     {
-                        Server.clients[id].Disconnect();
+                        Server.Disconnect(id);
                         return;
                     }
 
@@ -89,7 +92,7 @@ namespace TFIServer
                 catch (Exception _ex)
                 {
                     Console.WriteLine($"Error receiving data: {_ex}.");
-                    Server.clients[id].Disconnect();
+                    Server.Disconnect(id);
                 }
             }
 
@@ -111,12 +114,12 @@ namespace TFIServer
                 while (_packetLength > 0 && _packetLength <= receivedData.UnreadLength())
                 {
                     byte[] _packetBytes = receivedData.ReadBytes(_packetLength);
-                    ThreadManager.ExecuteOnMainThread(() =>
+                    ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
                     {
                         using (Packet _packet = new Packet(_packetBytes))
                         {
                             int _packetId = _packet.ReadInt();
-                            Server.packetHandlers[_packetId](id, _packet);
+                            Server.packetHandlers[_packetId](_game, id, _packet);
                         }
                     });
 
@@ -175,12 +178,12 @@ namespace TFIServer
                 int _packetLength = _packetData.ReadInt();
                 byte[] _packetBytes = _packetData.ReadBytes(_packetLength);
 
-                ThreadManager.ExecuteOnMainThread(() =>
+                ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
                 {
                     using (Packet _packet = new Packet(_packetBytes))
                     {
                         int _packetId = _packet.ReadInt();
-                        Server.packetHandlers[_packetId](id, _packet);
+                        Server.packetHandlers[_packetId](_game, id, _packet);
                     }
                 });
             }
@@ -190,41 +193,16 @@ namespace TFIServer
             }
         }
 
-        public void SendIntoGame(string _playerName)
+        public void Disconnect()
         {
-            player = new Player(id, _playerName, new Vector3(0, 0, 0));
-
-            // Tell new player about all other players excluding self.
-            foreach (Client _client in Server.clients.Values)
-            {
-                if (_client.player != null)
-                {
-                    if (_client.id != id)
-                    {
-                        ServerSend.SpawnPlayer(id, _client.player);
-                    }
-                }
-            }
-
-            // Tell all players about new player.
-            foreach (Client _client in Server.clients.Values)
-            {
-                if (_client.player != null)
-                {
-                    ServerSend.SpawnPlayer(_client.id, player);
-                }
-            }
-        }
-        private void Disconnect()
-        {
-            Console.WriteLine($"{ player.id} has disconnected.");
-
-            player = null;
-
             tcp.Disconnect();
             udp.Disconnect();
+
+            ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
+            {
+                _game.Disconnect(id);
+            });
         }
     }
-
 }
 

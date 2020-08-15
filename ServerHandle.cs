@@ -5,9 +5,10 @@ using System.Text;
 
 namespace TFIServer
 {
+    // These methods should only be calle from the game thread.
     class ServerHandle
     {
-        public static void WelcomeReceived(int _fromClient, Packet _packet)
+        public static void WelcomeReceived(GameLogic _game, int _fromClient, Packet _packet)
         {
             int _clientIdCheck = _packet.ReadInt();
             string _username = _packet.ReadString();
@@ -18,15 +19,11 @@ namespace TFIServer
             }
             else
             {
-                Server.clients[_fromClient].SendIntoGame(_username);
-
-                var ip = Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint;
-                Console.WriteLine($"{ip} [{_username}] accepted as player {_fromClient}.");
+                _game.AddPlayer(_fromClient, _username);
             }
-
         }
 
-        public static void PlayerMovement(int _fromClient, Packet _packet)
+        public static void PlayerMovement(GameLogic _game, int _fromClient, Packet _packet)
         {
             bool[] _inputs = new bool[_packet.ReadInt()];
             for (int i = 0; i < _inputs.Length; i++)
@@ -35,7 +32,7 @@ namespace TFIServer
             }
             Quaternion _rotation = _packet.ReadQuaternion();
 
-            Server.clients[_fromClient].player.SetInput(_inputs, _rotation);
+            _game.players[_fromClient].SetInput(_inputs, _rotation);
         }
     }
 }

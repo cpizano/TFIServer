@@ -6,6 +6,7 @@ using System.Text;
 
 namespace TFIServer
 {
+    // This object methods should only be called from the gamethread.
     class Player
     {
         public int id;
@@ -27,7 +28,7 @@ namespace TFIServer
 
             inputs = new bool[4];
         }
-        public void Update()
+        public void Update(GameLogic game)
         {
             Vector2 _inputDirection = Vector2.Zero;
             if (inputs[0])  // W
@@ -47,10 +48,10 @@ namespace TFIServer
                 _inputDirection.X -= 1;
             }
 
-            Move(_inputDirection);
+            Move(_inputDirection, game);
         }
 
-        private void Move(Vector2 _inputDirection)
+        private void Move(Vector2 _inputDirection, GameLogic game)
         {
             // For 3D, Z is forward (towards screen) and +Y is up.
             // Vector3 _forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
@@ -60,7 +61,7 @@ namespace TFIServer
             Vector3 _right = -Vector3.UnitX;
 
             Vector3 _moveDirection = (_right * _inputDirection.X) + (_forward * _inputDirection.Y);
-            position += _moveDirection * moveSpeed;
+            position = game.UpdatePosition(this, position + _moveDirection * moveSpeed);
 
             ServerSend.PlayerPosition(this);
             // Client is authoritative for rotation: update not sent back to self.

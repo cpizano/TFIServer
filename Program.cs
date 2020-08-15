@@ -3,6 +3,24 @@ using System.Threading;
 
 namespace TFIServer
 {
+    // The TFI server has the following main components
+    //  #### Networking centric, multithreaded
+    //  - Client
+    //      Contains the tcp and upd enpoints
+    //  - Server
+    //      Mantains Dictionary<int, Client>
+    //
+    //  #### Gameplay centric, singlethreaded
+    //  - GameLogic
+    //        Mantains Dictionary<int, Player>
+    //  - Player
+    //
+    // The networking side talks to the game side via
+    // some sort of messageloop in ThreadManager
+    // and the game side directly talks to  the server
+    // which uses a reader-writer lock to keep things
+    // consistent.
+
     class Program
     {
         private static bool isRunning = false;
@@ -21,13 +39,14 @@ namespace TFIServer
 
         private static void MainThread()
         {
+            GameLogic game = new GameLogic();
             DateTime _nextLoop = DateTime.Now;
 
             while (isRunning)
             {
                 while (_nextLoop < DateTime.Now)
                 {
-                    GameLogic.Update();
+                    game.UpdateFixed();
 
                     _nextLoop = _nextLoop.AddMilliseconds(Constants.MS_PER_TICK);
 
