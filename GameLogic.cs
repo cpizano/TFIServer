@@ -7,7 +7,7 @@ namespace TFIServer
 {
     class GameLogic
     {
-        public Dictionary<int, Player> players = new Dictionary<int, Player>();
+        public readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
 
         public void AddPlayer(int _id, string _playerName)
         {

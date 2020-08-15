@@ -9,8 +9,8 @@ namespace TFIServer
     // This object methods should only be called from the gamethread.
     class Player
     {
-        public int id;
-        public string username;
+        public readonly int id;
+        public readonly string username;
 
         public Vector3 position;
         public Quaternion rotation;

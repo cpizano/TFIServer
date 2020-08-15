@@ -11,9 +11,9 @@ namespace TFIServer
     {
         public static int dataBufferSize = 4096;
 
-        public int id;
-        public TCP tcp;
-        public UDP udp;
+        public readonly int id;
+        public readonly TCP tcp;
+        public readonly UDP udp;
         
         public Client(int _id)
         {
@@ -155,7 +155,7 @@ namespace TFIServer
         {
             public IPEndPoint endPoint;
 
-            private int id;
+            private readonly int id;
 
             public UDP(int _id)
             {
