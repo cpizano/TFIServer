@@ -34,8 +34,6 @@ namespace TFIServer
 
             udpListener = new UdpClient(Port);
             udpListener.BeginReceive(UDPReceiveCallback, null);
-
-            Console.WriteLine($"Server started on {Port}.");
         }
 
         public static void SendTCPData(int _toClient, Packet packet)

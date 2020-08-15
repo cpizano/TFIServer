@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace TFIServer
 {
-    // These methods should only be calle from the game thread.
+    // These methods should only be called from the game thread.
     class ServerHandle
     {
         public static void WelcomeReceived(GameLogic _game, int _fromClient, Packet _packet)

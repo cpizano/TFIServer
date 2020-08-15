@@ -24,17 +24,19 @@ namespace TFIServer
     class Program
     {
         private static bool isRunning = false;
+        private static readonly int udpPort = 26951;
 
         static void Main(string[] args)
         {
             Console.Title = "TFI Game server";
-  
+            Console.WriteLine($"Server v0 started at {DateTime.Now} on port {udpPort}.");
+
             isRunning = true;
 
             Thread mainThread = new Thread(new ThreadStart(MainThread));
             mainThread.Start();
 
-            Server.Start(20, 26951);
+            Server.Start(20, udpPort);
         }
 
         private static void MainThread()
