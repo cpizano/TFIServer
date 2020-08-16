@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 namespace TFIServer
@@ -29,7 +31,8 @@ namespace TFIServer
         static void Main(string[] args)
         {
             Console.Title = "TFI Game server";
-            Console.WriteLine($"Server v0 started at {DateTime.Now} on port {udpPort}.");
+            Console.WriteLine($"Server v200816c started at {DateTime.Now}");
+            Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udpPort}");
 
             isRunning = true;
 
@@ -62,6 +65,19 @@ namespace TFIServer
                     }
                 }
             }
+        }
+
+        private static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (IPAddress.IsLoopback(ip)) continue;
+                if (ip.AddressFamily != AddressFamily.InterNetwork) continue;
+
+                return ip.ToString();
+            }
+            throw new Exception("No IPV4 network adapters!");
         }
     }
 }
