@@ -26,7 +26,7 @@ namespace TFIServer
         }
 
         /// <summary>Executes all code meant to run on the main thread. NOTE: Call this ONLY from the main thread.</summary>
-        public static void UpdateFromNetwork(GameLogic game)
+        public static int UpdateFromNetwork(GameLogic game)
         {
             // Is this pattern correct? we are reading is boolean outside the lock.
             if (actionToExecuteOnMainThread)
@@ -43,7 +43,11 @@ namespace TFIServer
                 {
                     executeCopiedOnMainThread[i](game);
                 }
+
+                return executeCopiedOnMainThread.Count;
             }
+
+            return 0;
         }
     }
 }

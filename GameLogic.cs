@@ -11,50 +11,74 @@ namespace TFIServer
 
         public void AddPlayer(int _id, string _playerName)
         {
-            var newPlayer = new Player(_id, _playerName, GetSpawnPoint());
+            var _newPlayer = new Player(_id, _playerName, GetSpawnPoint());
 
             // Tell new player about all other existing players
             foreach (Player player in players.Values)
             {
-                ServerSend.SpawnPlayer(newPlayer.id, player);
+                ServerSend.SpawnPlayer(_newPlayer.id, player);
             }
 
-            players[_id] = newPlayer;
+            players[_id] = _newPlayer;
 
             // Tell all players (including self) about new player,
             foreach (Player player in players.Values)
             {
-                ServerSend.SpawnPlayer(player.id, newPlayer);
+                ServerSend.SpawnPlayer(player.id, _newPlayer);
             }
 
-            Console.WriteLine($"+ [{_playerName}] accepted as player {_id} @ {newPlayer.position}.");
+            //ServerSend.PlayerPosition(_newPlayer);
+            //ServerSend.PlayerRotation(_newPlayer);
+
+            Console.WriteLine($"+ [{_playerName}] accepted as player {_id} @ {_newPlayer.position}.");
         }
         public void UpdateFixed()
         {
-            foreach (Player player in players.Values)
+            var actions = ThreadManager.UpdateFromNetwork(this);
+            if (actions == 0)
             {
-                player.Update(this);
+                return;
             }
 
-            ThreadManager.UpdateFromNetwork(this);
-        }
-
-        public Vector3 UpdatePosition(Player player, Vector3 position)
-        {
             foreach (Player _p in players.Values)
             {
-                if (_p == player)
+                _p.Update(this);
+            }
+        }
+
+        internal void MovePlayer(Player _player, Vector2 _inputDirection)
+        {
+
+            // For 3D, Z is forward (towards screen) and +Y is up.
+            // Vector3 _forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
+            // Vector3 _right = Vector3.Normalize(Vector3.Cross(_forward, new Vector3(0, 1, 0)));
+
+            Vector3 _forward = Vector3.UnitY;
+            Vector3 _right = -Vector3.UnitX;
+
+            Vector3 _moveDirection = (_right * _inputDirection.X) + (_forward * _inputDirection.Y);
+            var newPosition = _player.position + (_moveDirection * _player.moveSpeed);
+
+            foreach (Player _p in players.Values)
+            {
+                if (_p == _player)
                 {
                     continue;
                 }
 
-                if (_p.Hit(position))
+                if (_p.Hit(newPosition))
                 {
-                    return player.position;
+                    Console.WriteLine($"+hit {_player.id} and {_p.id}");
+                    return;
                 }
             }
 
-            return position;
+            _player.position = newPosition;
+            ServerSend.PlayerPosition(_player);
+            // Client is authoritative for rotation: update not sent back to self.
+            ServerSend.PlayerRotation(_player);
+
+            //Console.WriteLine($"+mov {_player.id} @ {_player.position} {_inputDirection}");
         }
 
         internal void Connect(int _id)
