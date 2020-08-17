@@ -6,8 +6,13 @@ namespace TFIServer
     // These methods should only be called from the game thread.
     class ServerHandle
     {
+        public static int packets_recv_udp = 0;
+        public static int packets_recv_tcp = 0;
+
         public static void WelcomeReceived(GameLogic _game, int _fromClient, Packet _packet)
         {
+            packets_recv_tcp += 1;
+
             int _clientIdCheck = _packet.ReadInt();
             string _username = _packet.ReadString();
 
@@ -23,6 +28,8 @@ namespace TFIServer
 
         public static void PlayerMovement(GameLogic _game, int _fromClient, Packet _packet)
         {
+            packets_recv_udp += 1;
+
             bool[] _inputs = new bool[_packet.ReadInt()];
             for (int i = 0; i < _inputs.Length; i++)
             {

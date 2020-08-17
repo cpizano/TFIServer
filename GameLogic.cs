@@ -28,9 +28,6 @@ namespace TFIServer
                 ServerSend.SpawnPlayer(player.id, _newPlayer);
             }
 
-            //ServerSend.PlayerPosition(_newPlayer);
-            //ServerSend.PlayerRotation(_newPlayer);
-
             Console.WriteLine($"+ [{_playerName}] accepted as player {_id} @ {_newPlayer.position}.");
         }
         public void UpdateFixed(long ticks)
@@ -41,7 +38,8 @@ namespace TFIServer
                 var ms_delta = (ticks - last_ticks) / TimeSpan.TicksPerMillisecond;
                 if (ms_delta > 5000)
                 {
-                    Console.WriteLine($"ena: {ticks / TimeSpan.TicksPerSecond}");
+                    var seconds = ticks / TimeSpan.TicksPerSecond;
+                    Console.WriteLine( $"{seconds} ena {ServerHandle.packets_recv_tcp} {ServerHandle.packets_recv_udp}");
                     last_ticks = ticks;
                 }
                 return;
@@ -132,10 +130,16 @@ namespace TFIServer
 
         internal void DumpPlayers() 
         {
+            if (players.Count == 0)
+            {
+                Console.WriteLine("no players");
+                return;
+            }
+
             StringBuilder sb = new StringBuilder(120);
             foreach (var _p in players.Values)
             {
-                sb.AppendLine($"player {_p.id} : {_p.username} @ {_p.position}");
+                sb.AppendLine($"   player {_p.id} : {_p.username} @ {_p.position}");
             }
 
             Console.Write(sb.ToString());
