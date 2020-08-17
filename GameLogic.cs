@@ -7,8 +7,8 @@ namespace TFIServer
 {
     class GameLogic
     {
-        public readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
-        long last_ticks = 0;
+        private readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
+        private long last_ticks = 0;
 
         public void AddPlayer(int _id, string _playerName)
         {
@@ -53,6 +53,11 @@ namespace TFIServer
             }
 
             last_ticks = ticks;
+        }
+
+        internal void PlayerInput(int _fromClient, bool[] _inputs, Quaternion _rotation)
+        {
+            players[_fromClient].SetInput(_inputs, _rotation);
         }
 
         internal void MovePlayer(Player _player, Vector2 _inputDirection)

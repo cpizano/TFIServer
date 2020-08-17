@@ -30,7 +30,7 @@ namespace TFIServer
             }
             Quaternion _rotation = _packet.ReadQuaternion();
 
-            _game.players[_fromClient].SetInput(_inputs, _rotation);
+            _game.PlayerInput(_fromClient, _inputs, _rotation);
         }
     }
 }
