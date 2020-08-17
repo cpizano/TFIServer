@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -28,11 +29,16 @@ namespace TFIServer
         private static bool isRunning = false;
         private static readonly int udpPort = 26951;
 
+        private static Dictionary<string, (Action<GameLogic>, string)> actions;
+
         static void Main(string[] args)
         {
+            Console.BackgroundColor = ConsoleColor.Blue;
+            Console.ForegroundColor = ConsoleColor.White;
             Console.Title = "TFI Game server";
             Console.WriteLine($"Server v200816c started at {DateTime.Now}");
             Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udpPort}");
+            Console.ResetColor();
 
             isRunning = true;
 
@@ -40,6 +46,17 @@ namespace TFIServer
             mainThread.Start();
 
             Server.Start(20, udpPort);
+
+            InitActions();
+
+            for(; ; )
+            {
+                var line = Console.ReadLine();
+                if (actions.TryGetValue(line, out (Action<GameLogic> action, string name) it))
+                {
+                    ThreadManager.ExecuteOnMainThread(it.action);
+                }
+            }
         }
 
         private static void MainThread()
@@ -78,6 +95,29 @@ namespace TFIServer
                 return ip.ToString();
             }
             throw new Exception("No IPV4 network adapters!");
+        }
+
+        // The actions here run on the Gamelogic thread.
+        private static void PrintHelp(GameLogic _)
+        {
+            foreach(var action in actions)
+            {
+                Console.WriteLine($"{action.Key} : {action.Value.Item2}");
+            }
+        }
+
+        private static void DumpPlayers(GameLogic _game)
+        {
+            _game.DumpPlayers();
+        }
+
+        private static void InitActions()
+        {
+            actions = new Dictionary<string, (Action<GameLogic>, string)>()
+            {
+                { "?", (PrintHelp, nameof(PrintHelp)) },
+                { "d", (DumpPlayers, nameof(DumpPlayers)) }
+            };
         }
     }
 }

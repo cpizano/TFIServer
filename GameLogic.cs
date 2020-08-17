@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-
+using System.Text;
 
 namespace TFIServer
 {
@@ -78,7 +78,6 @@ namespace TFIServer
             // Client is authoritative for rotation: update not sent back to self.
             ServerSend.PlayerRotation(_player);
 
-            //Console.WriteLine($"+mov {_player.id} @ {_player.position} {_inputDirection}");
         }
 
         internal void Connect(int _id)
@@ -115,6 +114,17 @@ namespace TFIServer
             } while (redo);
 
             return _point;
+        }
+
+        internal void DumpPlayers() 
+        {
+            StringBuilder sb = new StringBuilder(120);
+            foreach (var _p in players.Values)
+            {
+                sb.AppendLine($"player {_p.id} : {_p.username} @ {_p.position}");
+            }
+
+            Console.Write(sb.ToString());
         }
     }
 }
