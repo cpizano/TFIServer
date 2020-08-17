@@ -8,6 +8,7 @@ namespace TFIServer
     class GameLogic
     {
         public readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
+        long last_ticks = 0;
 
         public void AddPlayer(int _id, string _playerName)
         {
@@ -32,11 +33,17 @@ namespace TFIServer
 
             Console.WriteLine($"+ [{_playerName}] accepted as player {_id} @ {_newPlayer.position}.");
         }
-        public void UpdateFixed()
+        public void UpdateFixed(long ticks)
         {
-            var actions = ThreadManager.UpdateFromNetwork(this);
+            var actions = ThreadManager.ExternalUpdate(this);
             if (actions == 0)
             {
+                var ms_delta = (ticks - last_ticks) / TimeSpan.TicksPerMillisecond;
+                if (ms_delta > 5000)
+                {
+                    Console.WriteLine($"ena: {ticks / TimeSpan.TicksPerSecond}");
+                    last_ticks = ticks;
+                }
                 return;
             }
 
@@ -44,6 +51,8 @@ namespace TFIServer
             {
                 _p.Update(this);
             }
+
+            last_ticks = ticks;
         }
 
         internal void MovePlayer(Player _player, Vector2 _inputDirection)
@@ -68,7 +77,7 @@ namespace TFIServer
 
                 if (_p.Hit(newPosition))
                 {
-                    Console.WriteLine($"+hit {_player.id} and {_p.id}");
+                    // On hit we don't move player.
                     return;
                 }
             }

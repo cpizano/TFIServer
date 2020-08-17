@@ -42,7 +42,7 @@ namespace TFIServer
 
             isRunning = true;
 
-            Thread mainThread = new Thread(new ThreadStart(MainThread));
+            Thread mainThread = new Thread(new ThreadStart(SimThread));
             mainThread.Start();
 
             Server.Start(20, udpPort);
@@ -59,16 +59,18 @@ namespace TFIServer
             }
         }
 
-        private static void MainThread()
+        private static void SimThread()
         {
             GameLogic game = new GameLogic();
             DateTime _nextLoop = DateTime.Now;
+            var _ticks_start = _nextLoop.Ticks; 
 
             while (isRunning)
             {
-                while (_nextLoop < DateTime.Now)
+                var now = DateTime.Now;
+                while (_nextLoop < now)
                 {
-                    game.UpdateFixed();
+                    game.UpdateFixed(now.Ticks - _ticks_start);
 
                     _nextLoop = _nextLoop.AddMilliseconds(Constants.MS_PER_TICK);
 

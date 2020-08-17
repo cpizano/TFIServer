@@ -26,7 +26,7 @@ namespace TFIServer
         }
 
         /// <summary>Executes all code meant to run on the main thread. NOTE: Call this ONLY from the main thread.</summary>
-        public static int UpdateFromNetwork(GameLogic game)
+        public static int ExternalUpdate(GameLogic game)
         {
             // Is this pattern correct? we are reading is boolean outside the lock.
             if (actionToExecuteOnMainThread)
