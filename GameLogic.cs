@@ -53,6 +53,11 @@ namespace TFIServer
             last_ticks = ticks;
         }
 
+        internal void PlayerQuit(int fromClient)
+        {
+            // player id might not yet exist.
+        }
+
         internal void PlayerInput(int _fromClient, bool[] _inputs, Quaternion _rotation)
         {
             players[_fromClient].SetInput(_inputs, _rotation);
@@ -94,7 +99,7 @@ namespace TFIServer
 
         internal void Connect(int _id)
         {
-            ServerSend.Welcome(_id, "TFI-Hello");
+            ServerSend.Welcome(_id);
         }
 
         internal void Disconnect(int _id)

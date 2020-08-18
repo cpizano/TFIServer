@@ -1,5 +1,5 @@
 ﻿
-using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace TFIServer
 {
@@ -10,5 +10,10 @@ namespace TFIServer
         public const float HIT_RADIUS_SQR = 0.7F;
         public const float SPAWN_DIST_X = 1.0F;
         public const float SPAWN_DIST_Y = 1.0F;
+
+        public static int GetLineNumer([CallerLineNumber] int _lineNumber = 0)
+        {
+            return _lineNumber;
+        }
     }
 }

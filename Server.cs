@@ -234,6 +234,9 @@ namespace TFIServer
 
         private static void InitializeServerData()
         {
+            ServerSend.InitProtocolVersion();
+            ServerHandle.InitProtocolVersion();
+
             clientLock.EnterWriteLock();
             try
             {
@@ -250,7 +253,8 @@ namespace TFIServer
             packetHandlers = new Dictionary<int, PacketHandler>()
             {
                 { (int)ClientPackets.welcomeReceived, ServerHandle.WelcomeReceived },
-                { (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement }
+                { (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement },
+                { (int)ClientPackets.sessionEnd, ServerHandle.SessionEnd }
             };
         }
     }

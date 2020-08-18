@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace TFIServer
 {
     // These methods should only be called from the game thread.
     class ServerHandle
     {
+        public static int version = 0;
+
         public static int packets_recv_udp = 0;
         public static int packets_recv_tcp = 0;
 
@@ -39,5 +42,24 @@ namespace TFIServer
 
             _game.PlayerInput(_fromClient, _inputs, _rotation);
         }
+
+        public static void SessionEnd(GameLogic _game, int _fromClient, Packet _packet)
+        {
+            packets_recv_tcp += 1;
+            string _reason = _packet.ReadString();
+
+            Console.WriteLine($"Player {_fromClient} quit [{_reason}]");
+
+            _game.PlayerQuit(_fromClient);
+        }
+
+        // Keep this last. It controls the protocol version via cheecky
+        // line numbers. Last was 61.
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void InitProtocolVersion()
+        {
+            version = Constants.GetLineNumer();
+        }
     }
+
 }

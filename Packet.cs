@@ -5,6 +5,7 @@ using System.Text;
 
 namespace TFIServer
 {
+
     /// <summary>Sent from server to client.</summary>
     public enum ServerPackets
     {
@@ -18,7 +19,8 @@ namespace TFIServer
     public enum ClientPackets
     {
         welcomeReceived = 1,
-        playerMovement
+        playerMovement,
+        sessionEnd
     }
 
     public class Packet : IDisposable

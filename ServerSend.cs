@@ -1,22 +1,26 @@
 ﻿
+using System.Runtime.CompilerServices;
+
 namespace TFIServer
 {
     // These methods are called from multiple threads. Don't add state here.
     class ServerSend
     {
-    
+        public static int version = 0;
 
         #region Packets
-        public static void Welcome(int _toClient, string _msg)
+        public static void Welcome(int _toClient)
         {
             using (Packet _packet = new Packet((int)ServerPackets.welcome))
             {
-                _packet.Write(_msg);
+                _packet.Write(ServerSend.version);
+                _packet.Write(ServerHandle.version);
                 _packet.Write(_toClient);
 
                 Server.SendTCPData(_toClient, _packet);
             }
         }
+
         public static void SpawnPlayer(int _toClient, Player _player)
         {
             using (Packet _packet = new Packet((int)ServerPackets.spawnPlayer))
@@ -53,5 +57,13 @@ namespace TFIServer
         }
 
         #endregion
+
+        // Keep this last. It controls the protocol version via cheecky
+        // line numbers. Last was 66.
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void InitProtocolVersion()
+        {
+            version = Constants.GetLineNumer();
+        }
     }
 }
