@@ -56,6 +56,17 @@ namespace TFIServer
             }
         }
 
+        public static void PlayerQuit(Player _player, int reason)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.playerQuit))
+            {
+                _packet.Write(_player.id);
+                _packet.Write(reason);
+
+                Server.SendTCPDataToAll(_player.id, _packet);
+            }
+        }
+
         #endregion
 
         // Keep this last. It controls the protocol version via cheecky

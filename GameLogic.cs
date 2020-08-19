@@ -53,9 +53,16 @@ namespace TFIServer
             last_ticks = ticks;
         }
 
-        internal void PlayerQuit(int fromClient)
+        internal void PlayerQuit(int _fromClient)
         {
-            // player id might not yet exist.
+
+            if (!players.TryGetValue(_fromClient, out var _player))
+            {
+                return;
+            }
+
+            _ = players.Remove(_fromClient);
+            ServerSend.PlayerQuit(_player, 0);
         }
 
         internal void PlayerInput(int _fromClient, bool[] _inputs, Quaternion _rotation)
@@ -104,7 +111,7 @@ namespace TFIServer
 
         internal void Disconnect(int _id)
         {
-            _ = players.Remove(_id);
+            PlayerQuit(_id);
             Console.WriteLine($"+ player {_id} disconnected.");
         }
 

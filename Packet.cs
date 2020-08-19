@@ -12,7 +12,8 @@ namespace TFIServer
         welcome = 1,
         spawnPlayer,
         playerPosition,
-        playerRotation
+        playerRotation,
+        playerQuit
     }
 
     /// <summary>Sent from client to server.</summary>
