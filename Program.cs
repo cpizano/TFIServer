@@ -36,8 +36,10 @@ namespace TFIServer
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.White;
             Console.Title = "TFI Game server";
-            Console.WriteLine($"Server v200816c started at {DateTime.Now}");
-            Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udpPort}");
+            Console.WriteLine($"Server v200816c started at {DateTime.Now} ");
+            Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udpPort} ");
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Commands available. Type ? for help ");
             Console.ResetColor();
 
             isRunning = true;
@@ -113,12 +115,18 @@ namespace TFIServer
             _game.DumpPlayers();
         }
 
+        private static void HeartBeat(GameLogic _game)
+        {
+            _game.ToggleHeartbeatPrint();
+        }
+
         private static void InitActions()
         {
             actions = new Dictionary<string, (Action<GameLogic>, string)>()
             {
                 { "?", (PrintHelp, nameof(PrintHelp)) },
-                { "d", (DumpPlayers, nameof(DumpPlayers)) }
+                { "d", (DumpPlayers, nameof(DumpPlayers)) },
+                { "h", (HeartBeat, nameof(HeartBeat)) }
             };
         }
     }

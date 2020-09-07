@@ -5,10 +5,25 @@ using System.Text;
 
 namespace TFIServer
 {
+    [Flags]
+    enum GameLogicOptions
+    {
+        None = 0,
+        Heartbeat = 1
+    }
+    static class GLOExtensions
+    {
+        public static bool HasHeartbeat(this GameLogicOptions options)
+        {
+            return (options & GameLogicOptions.Heartbeat) == GameLogicOptions.Heartbeat;
+        }
+    }
+
     class GameLogic
     {
         private readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
         private long last_ticks = 0;
+        private GameLogicOptions options = 0;
 
         public void AddPlayer(int _id, string _playerName)
         {
@@ -35,12 +50,15 @@ namespace TFIServer
             var actions = ThreadManager.ExternalUpdate(this);
             if (actions == 0)
             {
-                var ms_delta = (ticks - last_ticks) / TimeSpan.TicksPerMillisecond;
-                if (ms_delta > 5000)
+                if (options.HasHeartbeat())
                 {
-                    var seconds = ticks / TimeSpan.TicksPerSecond;
-                    Console.WriteLine( $"{seconds} ena {ServerHandle.packets_recv_tcp} {ServerHandle.packets_recv_udp}");
-                    last_ticks = ticks;
+                    var ms_delta = (ticks - last_ticks) / TimeSpan.TicksPerMillisecond;
+                    if (ms_delta > 5000)
+                    {
+                        var seconds = ticks / TimeSpan.TicksPerSecond;
+                        Console.WriteLine($"{seconds} ena {ServerHandle.packets_recv_tcp} {ServerHandle.packets_recv_udp}");
+                        last_ticks = ticks;
+                    }
                 }
                 return;
             }
@@ -113,6 +131,18 @@ namespace TFIServer
         {
             PlayerQuit(_id);
             Console.WriteLine($"+ player {_id} disconnected.");
+        }
+
+        internal void ToggleHeartbeatPrint()
+        {
+            if (options.HasHeartbeat())
+            {
+                options &= ~GameLogicOptions.Heartbeat;
+            }
+            else
+            {
+                options |= GameLogicOptions.Heartbeat;
+            }
         }
 
         internal Vector3 GetSpawnPoint()
