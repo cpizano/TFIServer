@@ -36,16 +36,17 @@ namespace TFIServer
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.White;
             Console.Title = "TFI Game server";
-            Console.WriteLine($"Server v200816c started at {DateTime.Now} ");
+            Console.WriteLine($"Server v201129a started at {DateTime.Now} ");
             Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udpPort} ");
+            Console.WriteLine($"+ Directory: {System.IO.Directory.GetCurrentDirectory()}");
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine("Commands available. Type ? for help ");
             Console.ResetColor();
 
             isRunning = true;
 
-            Thread mainThread = new Thread(new ThreadStart(SimThread));
-            mainThread.Start();
+            Thread simThread = new Thread(new ThreadStart(SimThread));
+            simThread.Start();
 
             Server.Start(20, udpPort);
 

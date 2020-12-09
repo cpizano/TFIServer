@@ -17,6 +17,7 @@ namespace TFIServer
 
         private static TcpListener tcpListener;
         private static UdpClient udpListener;
+        private static MapHandler mapHandler;
 
         private static ReaderWriterLockSlim clientLock = new ReaderWriterLockSlim();
         private static readonly Dictionary<int, Client> clients = new Dictionary<int, Client>();
@@ -234,6 +235,9 @@ namespace TFIServer
 
         private static void InitializeServerData()
         {
+            mapHandler = new MapHandler();
+            mapHandler.LoadMap("..\\..\\2dml_test1.tfimap");
+
             ServerSend.InitProtocolVersion();
             ServerHandle.InitProtocolVersion();
 

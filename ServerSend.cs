@@ -15,7 +15,11 @@ namespace TFIServer
             {
                 _packet.Write(ServerSend.version);
                 _packet.Write(ServerHandle.version);
-                _packet.Write(_toClient);
+                _packet.Write(_toClient);  // becomes client id.
+                _packet.Write(MapHandler.mapVersion);
+                _packet.Write(MapHandler.layers);
+                _packet.Write(MapHandler.rows);
+                _packet.Write(MapHandler.columns);
 
                 Server.SendTCPData(_toClient, _packet);
             }
@@ -69,8 +73,8 @@ namespace TFIServer
 
         #endregion
 
-        // Keep this last. It controls the protocol version via cheecky
-        // line numbers. Last was 66.
+        // Keep this last. It controls the protocol version via cheeky
+        // line numbers. Last was 81.
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitProtocolVersion()
         {
