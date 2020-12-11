@@ -1,4 +1,5 @@
 ﻿
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace TFIServer
@@ -19,7 +20,24 @@ namespace TFIServer
                 _packet.Write(MapHandler.mapVersion);
                 _packet.Write(MapHandler.layers);
                 _packet.Write(MapHandler.rows);
-                _packet.Write(MapHandler.columns);
+                _packet.Write(MapHandler.column_count);
+
+                Server.SendTCPData(_toClient, _packet);
+            }
+        }
+
+        public static void MapLayerRow(int _toClient, int layer, int row, int row_len,
+            IEnumerable<short> cells)
+        {
+            using (var _packet = new Packet((int)ServerPackets.mapLayerRow))
+            {
+                _packet.Write(layer);
+                _packet.Write(row);
+                _packet.Write(row_len);
+                foreach(var cell in cells)
+                {
+                    _packet.Write(cell);
+                }
 
                 Server.SendTCPData(_toClient, _packet);
             }
@@ -74,7 +92,7 @@ namespace TFIServer
         #endregion
 
         // Keep this last. It controls the protocol version via cheeky
-        // line numbers. Last was 81.
+        // line numbers. Last was 99.
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitProtocolVersion()
         {

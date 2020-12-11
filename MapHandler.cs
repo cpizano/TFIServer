@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace TFIServer
 {
@@ -9,10 +9,10 @@ namespace TFIServer
         public const int mapVersion = 1;
         public const int layers = 1;
         public const int rows = 100;
-        public const int columns = 100;
+        public const int column_count = 100;
 
         private enum LoadState { Header, Rows, Done }
-        private int [,] map = new int[columns, rows];
+        private int [,] map = new int[rows, column_count];
 
         public void LoadMap(string path_map)
         {
@@ -40,7 +40,7 @@ namespace TFIServer
                             int column = 0;
                             foreach (var str in row_str)
                             {
-                                map[column, row] = Int32.Parse(str);
+                                map[row, column] = Int16.Parse(str);
                                 column++;
                             }
                             row++;
@@ -61,6 +61,29 @@ namespace TFIServer
                     }
                 }  // while
             }  // using
+        }
+
+        // So C# cannot return a reference to a row of a square array. Rather
+        // than abandoning square arrays we can use a simple generator. Maybe
+        // it is not as inneficient as it looks. 
+        public IEnumerable<short> GetRowIter(int row)
+        {
+            for (var ix = 0; ix < column_count; ix++)
+            {
+                yield return (short)map[row, ix];
+            }
+        }
+
+        public bool SendMap(int _toClient)
+        {
+            for (int iy = 0; iy < rows; iy++)
+            {
+                int real_row = column_count - iy - 1;
+                ServerSend.MapLayerRow(
+                    _toClient, 0, real_row, column_count, GetRowIter(iy));
+            }
+
+            return true;
         }
 
     }

@@ -24,9 +24,19 @@ namespace TFIServer
         private readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
         private long last_ticks = 0;
         private GameLogicOptions options = 0;
+        private static MapHandler mapHandler;
+
+        public GameLogic()
+        {
+            mapHandler = new MapHandler();
+            mapHandler.LoadMap("..\\..\\2dml_test1.tfimap");
+        }
 
         public void AddPlayer(int _id, string _playerName)
         {
+            // First lets send the map.
+            mapHandler.SendMap(_id);
+
             var _newPlayer = new Player(_id, _playerName, GetSpawnPoint());
 
             // Tell new player about all other existing players
