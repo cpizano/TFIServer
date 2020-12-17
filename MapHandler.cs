@@ -78,7 +78,7 @@ namespace TFIServer
         {
             for (int iy = 0; iy < rows; iy++)
             {
-                int real_row = column_count - iy - 1;
+                var real_row = column_count - iy - 1;
                 ServerSend.MapLayerRow(
                     _toClient, 0, real_row, column_count, GetRowIter(iy));
             }
