@@ -134,7 +134,7 @@ namespace TFIServer
 
         internal void Connect(int _id)
         {
-            ServerSend.Welcome(_id);
+            ServerSend.Welcome(_id, mapHandler);
         }
 
         internal void Disconnect(int _id)

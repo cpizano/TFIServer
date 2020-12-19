@@ -10,17 +10,17 @@ namespace TFIServer
         public static int version = 0;
 
         #region Packets
-        public static void Welcome(int _toClient)
+        public static void Welcome(int _toClient, MapHandler map)
         {
             using (Packet _packet = new Packet((int)ServerPackets.welcome))
             {
                 _packet.Write(ServerSend.version);
                 _packet.Write(ServerHandle.version);
                 _packet.Write(_toClient);  // becomes client id.
-                _packet.Write(MapHandler.mapVersion);
-                _packet.Write(MapHandler.Layers);
-                _packet.Write(MapHandler.Row_count);
-                _packet.Write(MapHandler.Column_count);
+                _packet.Write(map.mapVersion);
+                _packet.Write(map.Layers);
+                _packet.Write(map.Row_count);
+                _packet.Write(map.Column_count);
 
                 Server.SendTCPData(_toClient, _packet);
             }

@@ -6,15 +6,15 @@ namespace TFIServer
 {
     class MapHandler
     {
-        public const int mapVersion = 1;
+        public readonly int mapVersion = 1;
 
-        public static int Layers { get => map.GetLength(0); }
-        public static int Row_count { get => map.GetLength(1); }
-        public static int Column_count { get => map.GetLength(2); }
+        public int Layers { get => map.GetLength(0); }
+        public int Row_count { get => map.GetLength(1); }
+        public int Column_count { get => map.GetLength(2); }
 
         // The map is [layer][rows][columns]. The |columns| is the count
         // of elements in the x coordinate, in other words the size of each row.
-        private static int[,,] map;
+        private int[,,] map;
 
         // A map is a directory with a manifest (man.txt) and as many
         // csv files (L0.csv, L1.csv, ...) as layers. The manifest defines
