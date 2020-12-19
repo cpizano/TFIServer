@@ -18,9 +18,9 @@ namespace TFIServer
                 _packet.Write(ServerHandle.version);
                 _packet.Write(_toClient);  // becomes client id.
                 _packet.Write(MapHandler.mapVersion);
-                _packet.Write(MapHandler.layers);
-                _packet.Write(MapHandler.rows);
-                _packet.Write(MapHandler.column_count);
+                _packet.Write(MapHandler.Layers);
+                _packet.Write(MapHandler.Row_count);
+                _packet.Write(MapHandler.Column_count);
 
                 Server.SendTCPData(_toClient, _packet);
             }

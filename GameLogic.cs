@@ -29,7 +29,7 @@ namespace TFIServer
         public GameLogic()
         {
             mapHandler = new MapHandler();
-            mapHandler.LoadMap("..\\..\\map001.tfimap");
+            mapHandler.LoadMap("..\\..\\map001");
         }
 
         public void AddPlayer(int _id, string _playerName)
