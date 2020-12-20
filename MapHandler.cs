@@ -6,7 +6,7 @@ namespace TFIServer
 {
     class MapHandler
     {
-        public readonly int mapVersion = 1;
+        public readonly int mapVersion = 2;
 
         public int Layers { get => map.GetLength(0); }
         public int Row_count { get => map.GetLength(1); }
@@ -83,7 +83,7 @@ namespace TFIServer
         // So C# cannot return a reference to a row of a square array. Rather
         // than abandoning square arrays we can use a simple generator. Maybe
         // it is not as inneficient as it looks. 
-        public IEnumerable<short> GetRowIter(int layer, int row)
+        private IEnumerable<short> GetRowIter(int layer, int row)
         {
             for (var ix = 0; ix < Column_count; ix++)
             {
@@ -93,12 +93,14 @@ namespace TFIServer
 
         public bool SendMap(int _toClient)
         {
-            var layer = 0;  // TODO (send other layers).
-            for (int iy = 0; iy < Row_count; iy++)
+            for (int layer = 0; layer < Layers; layer++)
             {
-                var real_row = Row_count - iy - 1;
-                ServerSend.MapLayerRow(
-                    _toClient, layer, real_row, Column_count, GetRowIter(layer, iy));
+                for (int iy = 0; iy < Row_count; iy++)
+                {
+                    var real_row = Row_count - iy - 1;
+                    ServerSend.MapLayerRow(
+                        _toClient, layer, real_row, Column_count, GetRowIter(layer, iy));
+                }
             }
 
             return true;
@@ -129,7 +131,7 @@ namespace TFIServer
             }
 
             if (lines[0].Length != 2 && lines[0][1] != "TFIMAP" &&
-                lines[0][2] != "v01") // keep in sync with |mapVersion|.
+                lines[0][2] != "v02") // keep in sync with |mapVersion|.
             {
                 throw new Exception("Map Invalid manifest version");
             }
