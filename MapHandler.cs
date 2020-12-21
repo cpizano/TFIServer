@@ -70,7 +70,14 @@ namespace TFIServer
                     int col = 0;
                     foreach (var cell in data.EnumerateArray())
                     {
-                        map[lyr, col / row_count, col % column_count] = cell.GetInt16();
+                        var id = cell.GetInt16();
+                        if (id == 0)
+                        {
+                            col++;
+                            continue;
+                        }
+
+                        map[lyr, col / row_count, col % column_count] = id;
                         col++;
                     }
                     lyr++;
