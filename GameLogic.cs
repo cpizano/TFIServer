@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using System.Drawing;
 
 namespace TFIServer
 {
@@ -28,8 +29,9 @@ namespace TFIServer
 
         public GameLogic()
         {
-            mapHandler = new MapHandler();
-            mapHandler.LoadMapJSON("..\\..\\map001.json");
+            // The 32 below is the Unit scale from pixels.
+            mapHandler = new MapHandler(32);
+            mapHandler.LoadMapJSON("..\\..\\map002.json");
         }
 
         public void AddPlayer(int _id, string _playerName)
@@ -157,27 +159,28 @@ namespace TFIServer
 
         internal Vector3 GetSpawnPoint()
         {
-
-            Vector3 _point = Vector3.Zero;
-            bool redo;
-
-            do
+            foreach (var spawn in mapHandler.GetSpawns())
             {
-                redo = false;
-                foreach (Player _p in players.Values)
+                foreach (var player in players.Values)
                 {
-                    var delta = _point - _p.position;
-                    if (_p.Hit(_point))
+                    if (spawn.Contains(player.position.X, player.position.Y))
                     {
-                        _point = _p.position + new Vector3(Constants.SPAWN_DIST_X, Constants.SPAWN_DIST_Y, 0);
-                        redo = true;
-                        break;
+                        goto found;
                     }
                 }
 
-            } while (redo);
+                // Nobody in this spawn point, use it.
+                return GetMidRect(spawn);
 
-            return _point;
+            found:;
+            }
+
+            return Vector3.Zero;
+        }
+
+        internal Vector3 GetMidRect(RectangleF r)
+        {
+            return new Vector3((r.X + r.Width / 2), (r.Y + r.Height / 2), 0);
         }
 
         internal void DumpPlayers() 
