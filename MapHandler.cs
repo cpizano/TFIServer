@@ -24,6 +24,12 @@ namespace TFIServer
             using (var reader = new System.IO.StreamReader(path_map))
             {
                 var root = JsonDocument.Parse(reader.BaseStream).RootElement;
+                
+                if (root.GetProperty("type").GetString() != "map")
+                {
+                    throw new Exception($"Map error: type is a not map");
+                }
+                
                 var column_count = root.GetProperty("width").GetInt32();
                 var row_count = root.GetProperty("height").GetInt32();
                 var layers = root.GetProperty("layers");
