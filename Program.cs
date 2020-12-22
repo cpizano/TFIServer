@@ -26,29 +26,29 @@ namespace TFIServer
 
     class Program
     {
-        private static bool isRunning = false;
-        private static readonly int udpPort = 26951;
+        private static bool is_running = false;
+        private static readonly int udp_port = 26951;
 
         private static Dictionary<string, (Action<GameLogic>, string)> actions;
 
-        static void Main(string[] args)
+        static void Main(string[] _)
         {
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.White;
             Console.Title = "TFI Game server";
             Console.WriteLine($"Server v201220a started at {DateTime.Now} ");
-            Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udpPort} ");
+            Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udp_port} ");
             Console.WriteLine($"+ Directory: {System.IO.Directory.GetCurrentDirectory()}");
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine("Commands available. Type ? for help ");
             Console.ResetColor();
 
-            isRunning = true;
+            is_running = true;
 
             Thread simThread = new Thread(new ThreadStart(SimThread));
             simThread.Start();
 
-            Server.Start(20, udpPort);
+            Server.Start(20, udp_port);
 
             InitActions();
 
@@ -65,21 +65,21 @@ namespace TFIServer
         private static void SimThread()
         {
             GameLogic game = new GameLogic();
-            DateTime _nextLoop = DateTime.Now;
-            var _ticks_start = _nextLoop.Ticks; 
+            DateTime next_loop = DateTime.Now;
+            var _ticks_start = next_loop.Ticks; 
 
-            while (isRunning)
+            while (is_running)
             {
                 var now = DateTime.Now;
-                while (_nextLoop < now)
+                while (next_loop < now)
                 {
                     game.UpdateFixed(now.Ticks - _ticks_start);
 
-                    _nextLoop = _nextLoop.AddMilliseconds(Constants.MS_PER_TICK);
+                    next_loop = next_loop.AddMilliseconds(Constants.MS_PER_TICK);
 
-                    if (_nextLoop > DateTime.Now)
+                    if (next_loop > DateTime.Now)
                     {
-                        Thread.Sleep(_nextLoop - DateTime.Now);
+                        Thread.Sleep(next_loop - DateTime.Now);
                     } 
                     else
                     {
@@ -111,14 +111,14 @@ namespace TFIServer
             }
         }
 
-        private static void DumpPlayers(GameLogic _game)
+        private static void DumpPlayers(GameLogic game)
         {
-            _game.DumpPlayers();
+            game.DumpPlayers();
         }
 
-        private static void HeartBeat(GameLogic _game)
+        private static void HeartBeat(GameLogic game)
         {
-            _game.ToggleHeartbeatPrint();
+            game.ToggleHeartbeatPrint();
         }
 
         private static void InitActions()
