@@ -128,7 +128,7 @@ namespace TFIServer
                         return;
                     }
 
-                    if (clients[_clientId].udp.endPoint == null)
+                    if (clients[_clientId].udp.endpoint == null)
                     {
                         // The first packet is the dummy packet the client sends right after hello that
                         // opens the port in the NAT? firewall? anyhow we don't process it.
@@ -137,7 +137,7 @@ namespace TFIServer
                     }
 
                     // The comparsion needs to be deep, not that the refs are equal.
-                    if (clients[_clientId].udp.endPoint.ToString() == _clientEndPoint.ToString())
+                    if (clients[_clientId].udp.endpoint.ToString() == _clientEndPoint.ToString())
                     {
                         clients[_clientId].udp.HandleData(_packet);
                     }

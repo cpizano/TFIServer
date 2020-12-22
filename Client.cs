@@ -7,7 +7,7 @@ namespace TFIServer
 {
     class Client
     {
-        public static int dataBufferSize = 4096;
+        public static int data_buffer_size = 4096;
 
         public readonly int id;
         public readonly TCP tcp;
@@ -25,8 +25,8 @@ namespace TFIServer
             public TcpClient socket;
             private readonly int id;
             private NetworkStream stream;
-            private Packet receivedData;
-            private byte[] receiveBuffer;
+            private Packet received_data;
+            private byte[] received_bytes;
 
             public TCP(int _id)
             {
@@ -36,36 +36,36 @@ namespace TFIServer
             public void Connect(TcpClient _socket)
             {
                 socket = _socket;
-                socket.SendBufferSize = dataBufferSize;
-                socket.ReceiveBufferSize = dataBufferSize;
+                socket.SendBufferSize = data_buffer_size;
+                socket.ReceiveBufferSize = data_buffer_size;
 
                 stream = socket.GetStream();
 
-                receivedData = new Packet();
-                receiveBuffer = new byte[dataBufferSize];
+                received_data = new Packet();
+                received_bytes = new byte[data_buffer_size];
 
-                stream.BeginRead(receiveBuffer, 0, dataBufferSize, new AsyncCallback(ReceiveCallback), null);
+                stream.BeginRead(received_bytes, 0, data_buffer_size, new AsyncCallback(ReceiveCallback), null);
 
                 Console.WriteLine($"= client {id} via {socket.Client.RemoteEndPoint}");
 
-                ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
+                ThreadManager.ExecuteOnMainThread((GameLogic game) =>
                 {
-                    _game.Connect(id);
+                    game.Connect(id);
                 });
             }
 
-            public void SendData(Packet _packet)
+            public void SendData(Packet packet)
             {
                 try
                 {
                     if (socket != null)
                     {
-                        stream.BeginWrite(_packet.ToArray(), 0, _packet.Length(), null, null);
+                        stream.BeginWrite(packet.ToArray(), 0, packet.Length(), null, null);
                     }
                 } 
-                catch (Exception _ex)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Error sending data to player {id} via TCP: {_ex}.");
+                    Console.WriteLine($"Error sending data to player {id} via TCP: {ex}.");
                 }
             }
 
@@ -73,66 +73,67 @@ namespace TFIServer
             {
                 try
                 {
-                    int _byteLenght = stream.EndRead(result);
-                    if (_byteLenght <= 0)
+                    int byteLenght = stream.EndRead(result);
+                    if (byteLenght <= 0)
                     {
                         Server.Disconnect(id);
                         return;
                     }
 
-                    byte[] _data = new byte[_byteLenght];
-                    Array.Copy(receiveBuffer, _data, _byteLenght);
-                    receivedData.Reset(HandleData(_data));
+                    byte[] _data = new byte[byteLenght];
+                    Array.Copy(received_bytes, _data, byteLenght);
+                    received_data.Reset(HandleData(_data));
 
-                    stream.BeginRead(receiveBuffer, 0, dataBufferSize, new AsyncCallback(ReceiveCallback), null);
+                    stream.BeginRead(
+                        received_bytes, 0, data_buffer_size, new AsyncCallback(ReceiveCallback), null);
 
                 }
-                catch (Exception _ex)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Error receiving data: {_ex}.");
+                    Console.WriteLine($"Error receiving data: {ex}.");
                     Server.Disconnect(id);
                 }
             }
 
-            private bool HandleData(byte[] _data)
+            private bool HandleData(byte[] data)
             {
-                int _packetLength = 0;
+                int packet_len = 0;
 
-                receivedData.SetBytes(_data);
+                received_data.SetBytes(data);
 
-                if (receivedData.UnreadLength() >= 4)
+                if (received_data.UnreadLength() >= 4)
                 {
-                    _packetLength = receivedData.ReadInt();
-                    if (_packetLength <= 0)
+                    packet_len = received_data.ReadInt();
+                    if (packet_len <= 0)
                     {
                         return true;
                     }
                 }
 
-                while (_packetLength > 0 && _packetLength <= receivedData.UnreadLength())
+                while (packet_len > 0 && packet_len <= received_data.UnreadLength())
                 {
-                    byte[] _packetBytes = receivedData.ReadBytes(_packetLength);
-                    ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
+                    byte[] bytes = received_data.ReadBytes(packet_len);
+                    ThreadManager.ExecuteOnMainThread((GameLogic game) =>
                     {
-                        using (Packet _packet = new Packet(_packetBytes))
+                        using (var packet = new Packet(bytes))
                         {
-                            int _packetId = _packet.ReadInt();
-                            Server.packetHandlers[_packetId](_game, id, _packet);
+                            int packet_id = packet.ReadInt();
+                            Server.packetHandlers[packet_id](game, id, packet);
                         }
                     });
 
-                    _packetLength = 0;
-                    if (receivedData.UnreadLength() >= 4)
+                    packet_len = 0;
+                    if (received_data.UnreadLength() >= 4)
                     {
-                        _packetLength = receivedData.ReadInt();
-                        if (_packetLength <= 0)
+                        packet_len = received_data.ReadInt();
+                        if (packet_len <= 0)
                         {
                             return true;
                         }
                     }
                 }
 
-                if (_packetLength <= 1)
+                if (packet_len <= 1)
                 {
                     return true;
                 }
@@ -143,15 +144,15 @@ namespace TFIServer
             {
                 socket.Close();
                 stream = null;
-                receivedData = null;
-                receiveBuffer = null;
+                received_data = null;
+                received_bytes = null;
                 socket = null;
             }
         }
 
         public class UDP
         {
-            public IPEndPoint endPoint;
+            public IPEndPoint endpoint;
 
             private readonly int id;
 
@@ -160,34 +161,34 @@ namespace TFIServer
                 id = _id;
             }
 
-            public void Connect(IPEndPoint _endPoint)
+            public void Connect(IPEndPoint _endpoint)
             {
                 // Called after receiving the first 'dummy' udp packet from client.
-                endPoint = _endPoint;
+                endpoint = _endpoint;
             }
 
-            public void SendData(Packet _packet)
+            public void SendData(Packet packet)
             {
-                Server.SendUDPData(endPoint, _packet);
+                Server.SendUDPData(endpoint, packet);
             }
 
-            public void HandleData(Packet _packetData)
+            public void HandleData(Packet packet_data)
             {
-                int _packetLength = _packetData.ReadInt();
-                byte[] _packetBytes = _packetData.ReadBytes(_packetLength);
+                int packet_len = packet_data.ReadInt();
+                byte[] bytes = packet_data.ReadBytes(packet_len);
 
-                ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
+                ThreadManager.ExecuteOnMainThread((GameLogic game) =>
                 {
-                    using (Packet _packet = new Packet(_packetBytes))
+                    using (Packet packet = new Packet(bytes))
                     {
-                        int _packetId = _packet.ReadInt();
-                        Server.packetHandlers[_packetId](_game, id, _packet);
+                        int packet_id = packet.ReadInt();
+                        Server.packetHandlers[packet_id](game, id, packet);
                     }
                 });
             }
             public void Disconnect()
             {
-                endPoint = null;
+                endpoint = null;
             }
         }
 
@@ -196,9 +197,9 @@ namespace TFIServer
             tcp.Disconnect();
             udp.Disconnect();
 
-            ThreadManager.ExecuteOnMainThread((GameLogic _game) =>
+            ThreadManager.ExecuteOnMainThread((GameLogic game) =>
             {
-                _game.Disconnect(id);
+                game.Disconnect(id);
             });
         }
     }

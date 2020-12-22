@@ -11,9 +11,9 @@ namespace TFIServer
         public const float SPAWN_DIST_X = 1.0F;
         public const float SPAWN_DIST_Y = 1.0F;
 
-        public static int GetLineNumer([CallerLineNumber] int _lineNumber = 0)
+        public static int GetLineNumer([CallerLineNumber] int line_number = 0)
         {
-            return _lineNumber;
+            return line_number;
         }
     }
 }
