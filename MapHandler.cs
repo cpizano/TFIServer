@@ -8,6 +8,12 @@ namespace TFIServer
 {
     class MapHandler
     {
+        enum Zones
+        {
+            WaterDeep,
+            PlayerSpawn
+        }
+
         public readonly int mapVersion = 2;
 
         public int Layers { get => map.GetLength(0); }
@@ -22,19 +28,22 @@ namespace TFIServer
         // The map is [layer][rows][columns]. The |columns| is the count
         // of elements in the x coordinate, in other words the size of each row.
         private int[,,] map;
-        private List<RectangleF> spawns;
+        private List<RectangleF> player_spawn;
+        private List<List<PointF>> water_deep;
 
         private int pixels_wide;
         private int pixels_height;
 
+        // The scale is used to scale all the loaded properties
+        // that use distances. Tiled uses floating point pixels.
         public MapHandler(int scale_int)
         {
             scale = scale_int;
         }
 
-        public IEnumerable<RectangleF> GetSpawns()
+        public IEnumerable<RectangleF> GetPlayerSpawns()
         {
-            foreach (var spawn in spawns)
+            foreach (var spawn in player_spawn)
             {
                 yield return new RectangleF(spawn.X, spawn.Y, spawn.Width, spawn.Height);
             }
@@ -89,7 +98,10 @@ namespace TFIServer
                 // Process object layers here. We flatten them, that is we don't
                 // care the ordering of their layers.
                 int object_layers = 0;
-                spawns = new List<RectangleF>();
+
+                player_spawn = new List<RectangleF>();
+                water_deep = new List<List<PointF>>();
+
                 foreach (var layer in layers.EnumerateArray())
                 {
                     if (layer.GetProperty("type").GetString() != "objectgroup")
@@ -100,13 +112,18 @@ namespace TFIServer
                     var objects = layer.GetProperty("objects");
                     foreach (var obj in objects.EnumerateArray())
                     {
-                        if (obj.GetProperty("name").GetString() == "spawn player")
+                        switch (obj.GetProperty("name").GetString())
                         {
-                            var x = GetJSonFloat(obj, "x");
-                            var y = pixels_height - GetJSonFloat(obj, "y");
-                            var w = GetJSonFloat(obj, "width");
-                            var h = GetJSonFloat(obj, "height");
-                            spawns.Add(new RectangleF(x / scale, y / scale, w / scale, h / scale));
+                            case "spawn player":
+                                player_spawn.Add(RectFromJson(obj));
+                                break;
+
+                            case "water deep":
+                                water_deep.Add(PolygonFromJson(obj));
+                                break;
+
+                            default:
+                                break;
                         }
                     }
 
@@ -146,9 +163,44 @@ namespace TFIServer
             }
         }
 
-        float GetJSonFloat(JsonElement elem, ReadOnlySpan<char> name)
+        private static float GetJSonFloat(JsonElement elem, ReadOnlySpan<char> name)
         {
             return (float)elem.GetProperty(name).GetDouble();
+        }
+
+        private RectangleF RectFromJson(JsonElement obj)
+        {
+            var point = PointFromJson(obj);
+            var size = SizeFromJson(obj);
+            return new RectangleF(point, size);
+        }
+
+        private List<PointF> PolygonFromJson(JsonElement obj)
+        {
+            var origin = PointFromJson(obj);
+            var array = obj.GetProperty("polygon");
+            List<PointF> poly = new List<PointF>();
+            foreach(var point in array.EnumerateArray())
+            {
+                var rel_pt = PointFromJson(point);
+                poly.Add(new PointF(rel_pt.X + origin.X, rel_pt.Y + origin.Y));
+            }
+
+            return poly;
+        }
+
+        private PointF PointFromJson(JsonElement obj)
+        {
+            var x = GetJSonFloat(obj, "x");
+            var y = pixels_height - GetJSonFloat(obj, "y");
+            return new PointF(x / scale, y / scale);
+        }
+
+        private SizeF SizeFromJson(JsonElement obj)
+        {
+            var w = GetJSonFloat(obj, "width");
+            var h = GetJSonFloat(obj, "height");
+            return new SizeF(w / scale, h / scale);
         }
 
         // So C# cannot return a reference to a row of a square array. Rather

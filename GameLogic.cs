@@ -161,7 +161,7 @@ namespace TFIServer
 
         internal Vector3 GetSpawnPoint()
         {
-            foreach (var spawn in mapHandler.GetSpawns())
+            foreach (var spawn in mapHandler.GetPlayerSpawns())
             {
                 foreach (var player in players.Values)
                 {
