@@ -49,7 +49,7 @@ namespace TFIServer
             using (Packet _packet = new Packet((int)ServerPackets.spawnPlayer))
             {
                 _packet.Write(_player.id);
-                _packet.Write(_player.username);
+                _packet.Write(_player.user_name);
                 _packet.Write(_player.position);
                 _packet.Write(_player.rotation);
 

@@ -8,40 +8,39 @@ namespace TFIServer
     class Player
     {
         public readonly int id;
-        public readonly string username;
+        public readonly string user_name;
 
         public Vector3 position;
         public Quaternion rotation;
 
-        public float moveSpeed = 5f / Constants.TICKS_PER_SEC;
-        private bool[] inputs;
+        public float move_speed = 5f / Constants.TICKS_PER_SEC;
+        private bool[] inputs_;
 
-        public Player(int _id, string _username, Vector3 _spawnPosition)
+        public Player(int _id, string username, Vector3 spawn_position)
         {
             id = _id;
-            username = _username;
-            position = _spawnPosition;
-            //rotation = Quaternion.Identity
+            user_name = username;
+            position = spawn_position;
             rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, 0f);
 
-            inputs = new bool[4];
+            inputs_ = new bool[4];
         }
         public void Update(GameLogic game)
         {
             Vector2 _inputDirection = Vector2.Zero;
-            if (inputs[0])  // W
+            if (inputs_[0])  // W
             {
                 _inputDirection.Y += 1;
             }
-            if (inputs[1])  // S
+            if (inputs_[1])  // S
             {
                 _inputDirection.Y -= 1;
             }
-            if (inputs[2]) // A
+            if (inputs_[2]) // A
             {
                 _inputDirection.X += 1;
             }
-            if (inputs[3]) // D
+            if (inputs_[3]) // D
             {
                 _inputDirection.X -= 1;
             }
@@ -53,19 +52,18 @@ namespace TFIServer
 
             game.MovePlayer(this, _inputDirection);
 
-            inputs[0] = inputs[1] = inputs[2] = inputs[3] = false;
+            inputs_[0] = inputs_[1] = inputs_[2] = inputs_[3] = false;
         }
 
-        public bool Hit(Vector3 _point)
+        public bool Hit(Vector3 point)
         {
-            var _delta = position - _point;
+            var _delta = position - point;
             return _delta.LengthSquared() < Constants.HIT_RADIUS_SQR;
         }
 
-        
         public void SetInput(bool[] _inputs, Quaternion _rotation)
         {
-            inputs = _inputs;
+            inputs_ = _inputs;
             rotation = _rotation;
         }
     }

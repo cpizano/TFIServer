@@ -113,7 +113,7 @@ namespace TFIServer
             Vector3 _right = -Vector3.UnitX;
 
             Vector3 _moveDirection = (_right * _inputDirection.X) + (_forward * _inputDirection.Y);
-            var newPosition = _player.position + (_moveDirection * _player.moveSpeed);
+            var newPosition = _player.position + (_moveDirection * _player.move_speed);
 
             foreach (Player _p in players.Values)
             {
@@ -196,7 +196,7 @@ namespace TFIServer
             StringBuilder sb = new StringBuilder(120);
             foreach (var _p in players.Values)
             {
-                sb.AppendLine($"   player {_p.id} : {_p.username} @ {_p.position}");
+                sb.AppendLine($"   player {_p.id} : {_p.user_name} @ {_p.position}");
             }
 
             Console.Write(sb.ToString());
