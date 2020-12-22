@@ -10,13 +10,14 @@ namespace TFIServer
         public static int version = 0;
 
         #region Packets
-        public static void Welcome(int _toClient, MapHandler map)
+        public static void Welcome(int _toClient, int ppu, MapHandler map)
         {
             using (Packet _packet = new Packet((int)ServerPackets.welcome))
             {
                 _packet.Write(ServerSend.version);
                 _packet.Write(ServerHandle.version);
                 _packet.Write(_toClient);  // becomes client id.
+                _packet.Write(ppu);  // Pixels per unit of distance.
                 _packet.Write(map.mapVersion);
                 _packet.Write(map.Layers);
                 _packet.Write(map.Row_count);

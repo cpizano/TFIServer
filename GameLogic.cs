@@ -27,10 +27,12 @@ namespace TFIServer
         private GameLogicOptions options = 0;
         private static MapHandler mapHandler;
 
+        // The client must have the same ppu value.
+        private readonly int pixels_per_unit = 32;
+
         public GameLogic()
         {
-            // The 32 below is the Unit scale from pixels.
-            mapHandler = new MapHandler(32);
+            mapHandler = new MapHandler(pixels_per_unit);
             mapHandler.LoadMapJSON("..\\..\\map002.json");
         }
 
@@ -136,7 +138,7 @@ namespace TFIServer
 
         internal void Connect(int _id)
         {
-            ServerSend.Welcome(_id, mapHandler);
+            ServerSend.Welcome(_id, pixels_per_unit, mapHandler);
         }
 
         internal void Disconnect(int _id)
