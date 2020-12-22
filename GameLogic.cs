@@ -22,181 +22,178 @@ namespace TFIServer
 
     class GameLogic
     {
-        private readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
-        private long last_ticks = 0;
-        private GameLogicOptions options = 0;
-        private static MapHandler mapHandler;
+        private readonly Dictionary<int, Player> players_;
+        private long last_ticks_ = 0;
+        private GameLogicOptions options_ = 0;
+        private MapHandler map_handler_;
 
         // The client must have the same ppu value.
-        private readonly int pixels_per_unit = 32;
+        private readonly int pixels_per_unit_ = 32;
 
         public GameLogic()
         {
-            mapHandler = new MapHandler(pixels_per_unit);
-            mapHandler.LoadMapJSON("..\\..\\map002.json");
+            players_ = new Dictionary<int, Player>();
+            map_handler_ = new MapHandler(pixels_per_unit_);
+            map_handler_.LoadMapJSON("..\\..\\map002.json");
         }
 
-        public void AddPlayer(int _id, string _playerName)
+        public void AddPlayer(int id, string player_name)
         {
             // First lets send the map.
-            mapHandler.SendMap(_id);
+            map_handler_.SendMap(id);
 
-            var _newPlayer = new Player(_id, _playerName, GetSpawnPoint());
+            var new_player = new Player(id, player_name, GetSpawnPoint());
 
             // Tell new player about all other existing players
-            foreach (Player player in players.Values)
+            foreach (Player player in players_.Values)
             {
-                ServerSend.SpawnPlayer(_newPlayer.id, player);
+                ServerSend.SpawnPlayer(new_player.id, player);
             }
 
-            players[_id] = _newPlayer;
+            players_[id] = new_player;
 
             // Tell all players (including self) about new player,
-            foreach (Player player in players.Values)
+            foreach (Player player in players_.Values)
             {
-                ServerSend.SpawnPlayer(player.id, _newPlayer);
+                ServerSend.SpawnPlayer(player.id, new_player);
             }
 
-            Console.WriteLine($"+ [{_playerName}] accepted as player {_id} @ {_newPlayer.position}.");
+            Console.WriteLine($"+ [{player_name}] accepted as player {id} @ {new_player.position}.");
         }
         public void UpdateFixed(long ticks)
         {
             var actions = ThreadManager.ExternalUpdate(this);
             if (actions == 0)
             {
-                if (options.HasHeartbeat())
+                if (options_.HasHeartbeat())
                 {
-                    var ms_delta = (ticks - last_ticks) / TimeSpan.TicksPerMillisecond;
+                    var ms_delta = (ticks - last_ticks_) / TimeSpan.TicksPerMillisecond;
                     if (ms_delta > 5000)
                     {
                         var seconds = ticks / TimeSpan.TicksPerSecond;
                         Console.WriteLine($"{seconds} ena {ServerHandle.packets_recv_tcp} {ServerHandle.packets_recv_udp}");
-                        last_ticks = ticks;
+                        last_ticks_ = ticks;
                     }
                 }
                 return;
             }
 
-            foreach (Player _p in players.Values)
+            foreach (Player player in players_.Values)
             {
-                _p.Update(this);
+                player.Update(this);
             }
 
-            last_ticks = ticks;
+            last_ticks_ = ticks;
         }
 
-        internal void PlayerQuit(int _fromClient)
+        internal void PlayerQuit(int from_client)
         {
-
-            if (!players.TryGetValue(_fromClient, out var _player))
+            if (!players_.TryGetValue(from_client, out var player))
             {
                 return;
             }
 
-            _ = players.Remove(_fromClient);
-            ServerSend.PlayerQuit(_player, 0);
+            _ = players_.Remove(from_client);
+            ServerSend.PlayerQuit(player, 0);
         }
 
-        internal void PlayerInput(int _fromClient, bool[] _inputs, Quaternion _rotation)
+        internal void PlayerInput(int from_client, bool[] inputs, Quaternion rotation)
         {
-            players[_fromClient].SetInput(_inputs, _rotation);
+            players_[from_client].SetInput(inputs, rotation);
         }
 
-        internal void MovePlayer(Player _player, Vector2 _inputDirection)
+        internal void MovePlayer(Player player, Vector2 input_direction)
         {
-
             // For 3D, Z is forward (towards screen) and +Y is up.
-            // Vector3 _forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
-            // Vector3 _right = Vector3.Normalize(Vector3.Cross(_forward, new Vector3(0, 1, 0)));
+            // Vector3 forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
+            // Vector3 right = Vector3.Normalize(Vector3.Cross(forward, new Vector3(0, 1, 0)));
 
-            Vector3 _forward = Vector3.UnitY;
-            Vector3 _right = -Vector3.UnitX;
+            Vector3 forward = Vector3.UnitY;
+            Vector3 right = -Vector3.UnitX;
 
-            Vector3 _moveDirection = (_right * _inputDirection.X) + (_forward * _inputDirection.Y);
-            var newPosition = _player.position + (_moveDirection * _player.move_speed);
+            Vector3 move_direction = (right * input_direction.X) + (forward * input_direction.Y);
+            var newPosition = player.position + (move_direction * player.move_speed);
 
-            foreach (Player _p in players.Values)
+            foreach (Player p in players_.Values)
             {
-                if (_p == _player)
+                if (p == player)
                 {
                     continue;
                 }
 
-                if (_p.Hit(newPosition))
+                if (p.Hit(newPosition))
                 {
                     // On hit we don't move player.
                     return;
                 }
             }
 
-            _player.position = newPosition;
-            ServerSend.PlayerPosition(_player);
+            player.position = newPosition;
+            ServerSend.PlayerPosition(player);
             // Client is authoritative for rotation: update not sent back to self.
-            ServerSend.PlayerRotation(_player);
-
+            ServerSend.PlayerRotation(player);
         }
 
-        internal void Connect(int _id)
+        internal void Connect(int id)
         {
-            ServerSend.Welcome(_id, pixels_per_unit, mapHandler);
+            ServerSend.Welcome(id, pixels_per_unit_, map_handler_);
         }
 
-        internal void Disconnect(int _id)
+        internal void Disconnect(int id)
         {
-            PlayerQuit(_id);
-            Console.WriteLine($"+ player {_id} disconnected.");
+            PlayerQuit(id);
+            Console.WriteLine($"+ player {id} disconnected.");
         }
 
         internal void ToggleHeartbeatPrint()
         {
-            if (options.HasHeartbeat())
+            if (options_.HasHeartbeat())
             {
-                options &= ~GameLogicOptions.Heartbeat;
+                options_ &= ~GameLogicOptions.Heartbeat;
             }
             else
             {
-                options |= GameLogicOptions.Heartbeat;
+                options_ |= GameLogicOptions.Heartbeat;
             }
         }
 
         internal Vector3 GetSpawnPoint()
         {
-            foreach (var spawn in mapHandler.GetPlayerSpawns())
+            foreach (var spawn in map_handler_.GetPlayerSpawns())
             {
-                foreach (var player in players.Values)
+                foreach (var player in players_.Values)
                 {
                     if (spawn.Contains(player.position.X, player.position.Y))
                     {
                         goto found;
                     }
                 }
-
                 // Nobody in this spawn point, use it.
-                return GetMidRect(spawn);
+                return GetMidRectVect(spawn);
 
             found:;
             }
-
+            // No spawn point free! TODO: do something better.
             return Vector3.Zero;
         }
 
-        internal Vector3 GetMidRect(RectangleF r)
+        internal Vector3 GetMidRectVect(RectangleF r)
         {
             return new Vector3((r.X + r.Width / 2), (r.Y + r.Height / 2), 0);
         }
 
         internal void DumpPlayers() 
         {
-            if (players.Count == 0)
+            if (players_.Count == 0)
             {
                 Console.WriteLine("no players");
                 return;
             }
 
             StringBuilder sb = new StringBuilder(120);
-            foreach (var _p in players.Values)
+            foreach (var p in players_.Values)
             {
-                sb.AppendLine($"   player {_p.id} : {_p.user_name} @ {_p.position}");
+                sb.AppendLine($"   player {p.id} : {p.user_name} @ {p.position}");
             }
 
             Console.Write(sb.ToString());
