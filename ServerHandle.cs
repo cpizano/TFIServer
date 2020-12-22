@@ -12,45 +12,45 @@ namespace TFIServer
         public static int packets_recv_udp = 0;
         public static int packets_recv_tcp = 0;
 
-        public static void WelcomeReceived(GameLogic _game, int _fromClient, Packet _packet)
+        public static void WelcomeReceived(GameLogic game, int from_client, Packet packet)
         {
             packets_recv_tcp += 1;
 
-            int _clientIdCheck = _packet.ReadInt();
-            string _username = _packet.ReadString();
+            int _clientIdCheck = packet.ReadInt();
+            string _username = packet.ReadString();
 
-            if (_fromClient != _clientIdCheck)
+            if (from_client != _clientIdCheck)
             {
-                Console.WriteLine($"Player \"{_username}\" (ID: {_fromClient}) has  wrong client ID ({_clientIdCheck})!");
+                Console.WriteLine($"Player \"{_username}\" (ID: {from_client}) has  wrong client ID ({_clientIdCheck})!");
             }
             else
             {
-                _game.AddPlayer(_fromClient, _username);
+                game.AddPlayer(from_client, _username);
             }
         }
 
-        public static void PlayerMovement(GameLogic _game, int _fromClient, Packet _packet)
+        public static void PlayerMovement(GameLogic game, int from_client, Packet packet)
         {
             packets_recv_udp += 1;
 
-            bool[] _inputs = new bool[_packet.ReadInt()];
+            bool[] _inputs = new bool[packet.ReadInt()];
             for (int i = 0; i < _inputs.Length; i++)
             {
-                _inputs[i] = _packet.ReadBool();
+                _inputs[i] = packet.ReadBool();
             }
-            Quaternion _rotation = _packet.ReadQuaternion();
+            Quaternion _rotation = packet.ReadQuaternion();
 
-            _game.PlayerInput(_fromClient, _inputs, _rotation);
+            game.PlayerInput(from_client, _inputs, _rotation);
         }
 
-        public static void SessionEnd(GameLogic _game, int _fromClient, Packet _packet)
+        public static void SessionEnd(GameLogic game, int from_client, Packet packet)
         {
             packets_recv_tcp += 1;
-            string _reason = _packet.ReadString();
+            string _reason = packet.ReadString();
 
-            Console.WriteLine($"Player {_fromClient} quit [{_reason}]");
+            Console.WriteLine($"Player {from_client} quit [{_reason}]");
 
-            _game.PlayerQuit(_fromClient);
+            game.PlayerQuit(from_client);
         }
 
         // Keep this last. It controls the protocol version via cheecky

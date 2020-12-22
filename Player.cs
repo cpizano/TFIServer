@@ -27,38 +27,38 @@ namespace TFIServer
         }
         public void Update(GameLogic game)
         {
-            Vector2 _inputDirection = Vector2.Zero;
+            Vector2 input_direction = Vector2.Zero;
             if (inputs_[0])  // W
             {
-                _inputDirection.Y += 1;
+                input_direction.Y += 1;
             }
             if (inputs_[1])  // S
             {
-                _inputDirection.Y -= 1;
+                input_direction.Y -= 1;
             }
             if (inputs_[2]) // A
             {
-                _inputDirection.X += 1;
+                input_direction.X += 1;
             }
             if (inputs_[3]) // D
             {
-                _inputDirection.X -= 1;
+                input_direction.X -= 1;
             }
 
-            if (_inputDirection == Vector2.Zero)
+            if (input_direction == Vector2.Zero)
             {
                 return;
             }
 
-            game.MovePlayer(this, _inputDirection);
+            game.MovePlayer(this, input_direction);
 
             inputs_[0] = inputs_[1] = inputs_[2] = inputs_[3] = false;
         }
 
         public bool Hit(Vector3 point)
         {
-            var _delta = position - point;
-            return _delta.LengthSquared() < Constants.HIT_RADIUS_SQR;
+            var delta = position - point;
+            return delta.LengthSquared() < Constants.HIT_RADIUS_SQR;
         }
 
         public void SetInput(bool[] _inputs, Quaternion _rotation)
