@@ -128,6 +128,14 @@ namespace TFIServer
                 }
             }
 
+            var zones = map_handler_.GetZonesForPoint(
+                new PointF(newPosition.X, newPosition.Y));
+
+            if (zones.Contains(Zones.WaterDeep))
+            {
+                return;
+            }
+
             player.position = newPosition;
             ServerSend.PlayerPosition(player);
             // Client is authoritative for rotation: update not sent back to self.

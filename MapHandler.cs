@@ -6,13 +6,23 @@ using System.Numerics;
 
 namespace TFIServer
 {
+    enum Zones
+    {
+        // Bitfield usage.
+        None         = 0,
+        WaterDeep    = 1,
+        PlayerSpawn  = 2
+    }
+    static class ZoneExtensions
+    {
+        public static bool Contains(this Zones zones, Zones to_test)
+        {
+            return (zones & to_test) == to_test;
+        }
+    }
+
     class MapHandler
     {
-        enum Zones
-        {
-            WaterDeep,
-            PlayerSpawn
-        }
 
         public readonly int mapVersion = 2;
 
@@ -192,11 +202,12 @@ namespace TFIServer
         private List<PointF> PolygonFromJson(JsonElement obj)
         {
             var origin = PointFromJson(obj);
-            var array = obj.GetProperty("polygon");
+
             List<PointF> poly = new List<PointF>();
+            var array = obj.GetProperty("polygon");
             foreach(var point in array.EnumerateArray())
             {
-                var rel_pt = PointFromJson(point);
+                var rel_pt = RelPointFromJson(point);
                 poly.Add(new PointF(rel_pt.X + origin.X, rel_pt.Y + origin.Y));
             }
 
@@ -207,6 +218,13 @@ namespace TFIServer
         {
             var x = GetJSonFloat(obj, "x");
             var y = pixels_height_ - GetJSonFloat(obj, "y");
+            return new PointF(x / scale_, y / scale_);
+        }
+
+        private PointF RelPointFromJson(JsonElement obj)
+        {
+            var x = GetJSonFloat(obj, "x");
+            var y = -GetJSonFloat(obj, "y");
             return new PointF(x / scale_, y / scale_);
         }
 
@@ -226,6 +244,89 @@ namespace TFIServer
             {
                 yield return (short)map_[layer, row, ix];
             }
+        }
+
+        // IsLeft(): tests if a point is Left|On|Right of an infinite line.
+        //    Input:  three points l0, l1, and pt
+        //    Return: > 0 for pt left of the line through l0 and l1
+        //            == 0 for pt  on the line
+        //            < 0 for pt  right of the line
+        //
+        // This is exactly the same computation for the 'signed' area of a
+        // triangle if we consider the 3 points forming one. Which turns
+        // out is the cross product of the two vectors and positive values
+        // means the points are in clockwise order.
+        private float IsLeft(PointF l0, PointF l1, PointF pt)
+        {
+            return ((l1.X - l0.X) * (pt.Y - l0.Y) - (pt.X - l0.X) * (l1.Y - l0.Y));
+        }
+
+        // WindingNumber(): winding number test for a point in a polygon.
+        // from http://geomalgorithms.com/a03-_inclusion.html
+        //      Input:   point = a point,
+        //               poly[] = vertex points of a polygon V[n+1] with V[n]=V[0].
+        //      Return:  wn = the winding number (== 0 only when point is outside)
+        int WindingNumber(PointF point, List<PointF> poly)
+        {
+            int wn = 0;    // the  winding number counter.
+
+            // loop through all edges of the polygon
+            for (int ix = 0; ix < poly.Count; ix++)
+            {   // edge from poly[i] to  poly[i+1]
+                var next = (ix + 1) % poly.Count;
+                if (poly[ix].Y <= point.Y)
+                {
+                    if (poly[next].Y > point.Y)
+                    {   // an upward crossing.
+                        if (IsLeft(poly[ix], poly[next], point) > 0.0)
+                        {
+                            // point left of edge and have a valid up intersect
+                            ++wn;            
+                        }
+                    }
+                }
+                else
+                {   // y > point.y (no test needed)
+                    if (poly[next].Y <= point.Y)
+                    {   // a downward crossing.
+                        if (IsLeft(poly[ix], poly[next], point) < 0.0)
+                        {
+                            // point right of edge and have a valid down intersect
+                            --wn;
+                        }
+                    }
+                }
+            }
+            return wn;
+        }
+
+        // Returns all the zones the point is inside of. It short circuits so
+        // if only evaluates up to finding one single hit of each type. For poligons
+        // we use the optimized winding number which is a bit more expensive but can
+        // handle complex poligons.
+        public Zones GetZonesForPoint(PointF point)
+        {
+            Zones zones = Zones.None;
+
+            foreach (var rect in player_spawn_)
+            {
+                if (rect.Contains(point))
+                {
+                    zones |= Zones.PlayerSpawn;
+                    break;
+                }
+            }
+
+            foreach (var poly in water_deep_)
+            {
+                if (WindingNumber(point, poly) != 0)
+                {
+                    zones |= Zones.WaterDeep;
+                    break;
+                }
+            }
+
+            return zones;
         }
     }
 }
