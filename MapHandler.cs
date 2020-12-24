@@ -11,7 +11,8 @@ namespace TFIServer
         // Bitfield usage.
         None         = 0,
         WaterDeep    = 1,
-        PlayerSpawn  = 2
+        Boulders     = 2,
+        PlayerSpawn  = 64,
     }
     static class ZoneExtensions
     {
@@ -39,7 +40,7 @@ namespace TFIServer
         private int[,,] map_;
         private List<RectangleF> player_spawn_;
         private List<List<PointF>> water_deep_;
-
+        private List<List<PointF>> boulders_;
         private int pixels_wide_;
         private int pixels_height_;
 
@@ -125,6 +126,7 @@ namespace TFIServer
 
                 player_spawn_ = new List<RectangleF>();
                 water_deep_ = new List<List<PointF>>();
+                boulders_ = new List<List<PointF>>();
 
                 foreach (var layer in layers.EnumerateArray())
                 {
@@ -144,6 +146,10 @@ namespace TFIServer
 
                             case "water deep":
                                 water_deep_.Add(PolygonFromJson(obj));
+                                break;
+
+                            case "boulder":
+                                boulders_.Add(PolygonFromJson(obj));
                                 break;
 
                             default:
@@ -256,7 +262,7 @@ namespace TFIServer
         // triangle if we consider the 3 points forming one. Which turns
         // out is the cross product of the two vectors and positive values
         // means the points are in clockwise order.
-        private float IsLeft(PointF l0, PointF l1, PointF pt)
+        private static float IsLeft(PointF l0, PointF l1, PointF pt)
         {
             return ((l1.X - l0.X) * (pt.Y - l0.Y) - (pt.X - l0.X) * (l1.Y - l0.Y));
         }
@@ -266,7 +272,7 @@ namespace TFIServer
         //      Input:   point = a point,
         //               poly[] = vertex points of a polygon V[n+1] with V[n]=V[0].
         //      Return:  wn = the winding number (== 0 only when point is outside)
-        int WindingNumber(PointF point, List<PointF> poly)
+        private static int WindingNumber(PointF point, List<PointF> poly)
         {
             int wn = 0;    // the  winding number counter.
 
@@ -300,6 +306,18 @@ namespace TFIServer
             return wn;
         }
 
+        private static bool InsidePolygonZone(List<List<PointF>> poligons, PointF point)
+        {
+            foreach (var poly in poligons)
+            {
+                if (WindingNumber(point, poly) != 0)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // Returns all the zones the point is inside of. It short circuits so
         // if only evaluates up to finding one single hit of each type. For poligons
         // we use the optimized winding number which is a bit more expensive but can
@@ -317,13 +335,14 @@ namespace TFIServer
                 }
             }
 
-            foreach (var poly in water_deep_)
+            if (InsidePolygonZone(water_deep_, point))
             {
-                if (WindingNumber(point, poly) != 0)
-                {
-                    zones |= Zones.WaterDeep;
-                    break;
-                }
+                zones |= Zones.WaterDeep;
+            }
+
+            if (InsidePolygonZone(boulders_, point))
+            {
+                zones |= Zones.Boulders;
             }
 
             return zones;

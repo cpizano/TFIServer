@@ -34,7 +34,7 @@ namespace TFIServer
         {
             players_ = new Dictionary<int, Player>();
             map_handler_ = new MapHandler(pixels_per_unit_);
-            map_handler_.LoadMapJSON("..\\..\\map002.json");
+            map_handler_.LoadMapJSON("..\\..\\map003.json");
         }
 
         public void AddPlayer(int id, string player_name)
@@ -131,8 +131,9 @@ namespace TFIServer
             var zones = map_handler_.GetZonesForPoint(
                 new PointF(newPosition.X, newPosition.Y));
 
-            if (zones.Contains(Zones.WaterDeep))
+            if (zones.Contains(Zones.WaterDeep) || zones.Contains(Zones.Boulders))
             {
+                // Can't walk on water or across boulders.
                 return;
             }
 
