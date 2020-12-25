@@ -6,19 +6,29 @@ using System.Numerics;
 
 namespace TFIServer
 {
-    enum Zones
+    enum ZoneIds
+    {
+        WaterDeep,
+        Boulders,
+    }
+    enum ZoneBits
     {
         // Bitfield usage.
         None         = 0,
-        WaterDeep    = 1,
-        Boulders     = 2,
-        PlayerSpawn  = 64,
+        WaterDeep    = 1 << ZoneIds.WaterDeep,
+        Boulders     = 1 << ZoneIds.Boulders,
     }
+
     static class ZoneExtensions
     {
-        public static bool Contains(this Zones zones, Zones to_test)
+        public static bool Contains(this ZoneBits zones, ZoneBits to_test)
         {
             return (zones & to_test) == to_test;
+        }
+
+        public static ZoneBits ToBit(this ZoneIds zid)
+        {
+            return (ZoneBits)(1 << (int)zid);
         }
     }
 
@@ -38,9 +48,11 @@ namespace TFIServer
         // The map is [layer][rows][columns]. The |columns| is the count
         // of elements in the x coordinate, in other words the size of each row.
         private int[,,] map_;
+        // Zones is one list of polygones per ZoneIds.
+        private List<List<PointF>>[] zones_;
+
         private List<RectangleF> player_spawn_;
-        private List<List<PointF>> water_deep_;
-        private List<List<PointF>> boulders_;
+
         private int pixels_wide_;
         private int pixels_height_;
 
@@ -123,9 +135,9 @@ namespace TFIServer
                 // care the ordering of their layers.
                 int object_layers = 0;
 
+                zones_ = new List<List<PointF>>[3];
+
                 player_spawn_ = new List<RectangleF>();
-                water_deep_ = new List<List<PointF>>();
-                boulders_ = new List<List<PointF>>();
 
                 foreach (var layer in layers.EnumerateArray())
                 {
@@ -144,11 +156,19 @@ namespace TFIServer
                                 break;
 
                             case "water deep":
-                                water_deep_.Add(PolygonFromJson(obj));
+                                if (zones_[(int)ZoneIds.WaterDeep] == null)
+                                {
+                                    zones_[(int)ZoneIds.WaterDeep] = new List<List<PointF>>();
+                                }
+                                zones_[(int)ZoneIds.WaterDeep].Add(PolygonFromJson(obj));
                                 break;
 
                             case "boulder":
-                                boulders_.Add(PolygonFromJson(obj));
+                                if (zones_[(int)ZoneIds.Boulders] == null)
+                                {
+                                    zones_[(int)ZoneIds.Boulders] = new List<List<PointF>>();
+                                }
+                                zones_[(int)ZoneIds.Boulders].Add(PolygonFromJson(obj));
                                 break;
 
                             default:
@@ -321,27 +341,16 @@ namespace TFIServer
         // if only evaluates up to finding one single hit of each type. For poligons
         // we use the optimized winding number which is a bit more expensive but can
         // handle complex poligons.
-        public Zones GetZonesForPoint(PointF point)
+        public ZoneBits GetZonesForPoint(PointF point)
         {
-            Zones zones = Zones.None;
+            ZoneBits zones = ZoneBits.None;
 
-            foreach (var rect in player_spawn_)
+            foreach (var zid in (ZoneIds[]) Enum.GetValues(typeof(ZoneIds)))
             {
-                if (rect.Contains(point))
+                if (InsidePolygonZone(zones_[(int)zid], point))
                 {
-                    zones |= Zones.PlayerSpawn;
-                    break;
+                    zones |= zid.ToBit();
                 }
-            }
-
-            if (InsidePolygonZone(water_deep_, point))
-            {
-                zones |= Zones.WaterDeep;
-            }
-
-            if (InsidePolygonZone(boulders_, point))
-            {
-                zones |= Zones.Boulders;
             }
 
             return zones;

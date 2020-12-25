@@ -140,7 +140,7 @@ namespace TFIServer
             }
 
             var zones = map_handler_.GetZonesForPoint(point);
-            if (zones.Contains(Zones.WaterDeep) || zones.Contains(Zones.Boulders))
+            if (zones.Contains(ZoneBits.WaterDeep) || zones.Contains(ZoneBits.Boulders))
             {
                 // Can't walk on water or across boulders.
                 return;
