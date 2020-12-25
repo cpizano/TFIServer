@@ -13,7 +13,7 @@ namespace TFIServer
         public Vector3 position;
         public Quaternion rotation;
 
-        public float move_speed = 5f / Constants.TICKS_PER_SEC;
+        public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
         private bool[] inputs_;
 
         public Player(int _id, string username, Vector3 spawn_position)
