@@ -26,6 +26,7 @@ namespace TFIServer
         private long last_ticks_ = 0;
         private GameLogicOptions options_ = 0;
         private MapHandler map_handler_;
+        private RectangleF map_extents_;
 
         // The client must have the same ppu value.
         private readonly int pixels_per_unit_ = 32;
@@ -35,6 +36,9 @@ namespace TFIServer
             players_ = new Dictionary<int, Player>();
             map_handler_ = new MapHandler(pixels_per_unit_);
             map_handler_.LoadMapJSON("..\\..\\map003.json");
+
+            map_extents_ = new RectangleF(
+                0, 0, map_handler_.Column_count, map_handler_.Row_count);
         }
 
         public void AddPlayer(int id, string player_name)
@@ -114,6 +118,13 @@ namespace TFIServer
             Vector3 move_direction = (right * input_direction.X) + (forward * input_direction.Y);
             var newPosition = player.position + (move_direction * player.move_speed);
 
+            var point = new PointF(newPosition.X, newPosition.Y);
+
+            if (!map_extents_.Contains(point)) {
+                // Keep the players in the map.
+                return;
+            }
+
             foreach (Player p in players_.Values)
             {
                 if (p == player)
@@ -128,9 +139,7 @@ namespace TFIServer
                 }
             }
 
-            var zones = map_handler_.GetZonesForPoint(
-                new PointF(newPosition.X, newPosition.Y));
-
+            var zones = map_handler_.GetZonesForPoint(point);
             if (zones.Contains(Zones.WaterDeep) || zones.Contains(Zones.Boulders))
             {
                 // Can't walk on water or across boulders.
@@ -183,7 +192,7 @@ namespace TFIServer
             found:;
             }
             // No spawn point free! TODO: do something better.
-            return Vector3.Zero;
+            return new Vector3(20, 20, 0);
         }
 
         internal Vector3 GetMidRectVect(RectangleF r)
