@@ -45,8 +45,15 @@ namespace TFIServer
 
             is_running = true;
 
-            Thread simThread = new Thread(new ThreadStart(SimThread));
-            simThread.Start();
+            (int status, string map) = ProcessConfig();
+            if (status != 0)
+            {
+                Console.WriteLine($"config error {status}. Terminating.\n");
+                return;
+            }
+
+            Thread simThread = new Thread(SimThread);
+            simThread.Start(map);
 
             Server.Start(20, udp_port);
 
@@ -62,9 +69,45 @@ namespace TFIServer
             }
         }
 
-        private static void SimThread()
+        // Process the config file that is found in the "bin" directory.
+        // the return is the path to the map and 0 for success any other
+        // status it means error.
+        private static (int status, string map) ProcessConfig()
         {
-            GameLogic game = new GameLogic();
+            // The config file is expected to be:
+            // CONFIG v1
+            // MAP <path to a map (json format).
+            // END
+
+            List<string[]> lines = new List<string[]>();
+            using (var reader = new System.IO.StreamReader("..\\..\\config.txt"))
+            {
+                while (!reader.EndOfStream)
+                {
+                    lines.Add(reader.ReadLine().Split(' '));
+                }
+            }
+            if (lines.Count < 3)
+            {
+                return (1, "");
+            }
+            if (lines[0].Length != 2 ||  lines[0][0] != "CONFIG" || lines[0][1] != "v1")
+            {
+                return (2, "");
+            }
+            if (lines[1].Length != 2 || lines[1][0] != "MAP")
+            {
+                return (3, "");
+            }
+
+            return (0, lines[1][1]);
+        }
+
+        // 
+
+        private static void SimThread(object map)
+        {
+            GameLogic game = new GameLogic(map as string);
             DateTime next_loop = DateTime.Now;
             var _ticks_start = next_loop.Ticks; 
 

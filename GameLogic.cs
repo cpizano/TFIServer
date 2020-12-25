@@ -31,11 +31,11 @@ namespace TFIServer
         // The client must have the same ppu value.
         private readonly int pixels_per_unit_ = 32;
 
-        public GameLogic()
+        public GameLogic(string map)
         {
             players_ = new Dictionary<int, Player>();
             map_handler_ = new MapHandler(pixels_per_unit_);
-            map_handler_.LoadMapJSON("..\\..\\map003.json");
+            map_handler_.LoadMapJSON(map);
 
             map_extents_ = new RectangleF(
                 0, 0, map_handler_.Column_count, map_handler_.Row_count);
