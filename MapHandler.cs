@@ -10,13 +10,21 @@ namespace TFIServer
     {
         WaterDeep,
         Boulders,
+        Stairs,
+        Threshold1,
+        Threshold2,
+        Threshold3       // keep zones_ array in sync
     }
     enum ZoneBits
     {
         // Bitfield usage.
-        None         = 0,
-        WaterDeep    = 1 << ZoneIds.WaterDeep,
-        Boulders     = 1 << ZoneIds.Boulders,
+        None            = 0,
+        WaterDeep       = 1 << ZoneIds.WaterDeep,
+        Boulders        = 1 << ZoneIds.Boulders,
+        Stairs          = 1 << ZoneIds.Stairs,
+        Threshold1      = 1 << ZoneIds.Threshold1,
+        Threshold2      = 1 << ZoneIds.Threshold2,
+        Threshold3      = 1 << ZoneIds.Threshold3,
     }
 
     static class ZoneExtensions
@@ -29,6 +37,23 @@ namespace TFIServer
         public static ZoneBits ToBit(this ZoneIds zid)
         {
             return (ZoneBits)(1 << (int)zid);
+        }
+
+        public static int Index(this ZoneIds zid)
+        {
+            return (int)zid;
+        }
+
+        public static int GetThreshold(this ZoneBits zones)
+        {
+            var z =  zones & (ZoneBits.Threshold1 | ZoneBits.Threshold2 | ZoneBits.Threshold3);
+            return z switch
+            {
+                ZoneBits.Threshold1 => 1,
+                ZoneBits.Threshold2 => 2,
+                ZoneBits.Threshold3 => 3,
+                _ => 0,
+            };
         }
     }
 
@@ -48,8 +73,9 @@ namespace TFIServer
         // The map is [layer][rows][columns]. The |columns| is the count
         // of elements in the x coordinate, in other words the size of each row.
         private int[,,] map_;
-        // Zones is one list of polygones per ZoneIds.
-        private List<List<PointF>>[] zones_;
+
+        // Zones is one list of polygons per each ZoneId.
+        private readonly List<List<PointF>>[] zones_ = new List<List<PointF>>[6];
 
         private List<RectangleF> player_spawn_;
 
@@ -134,8 +160,7 @@ namespace TFIServer
                 // Process object layers here. We flatten them, that is we don't
                 // care the ordering of their layers.
                 int object_layers = 0;
-
-                zones_ = new List<List<PointF>>[3];
+                int map_objects = 0;
 
                 player_spawn_ = new List<RectangleF>();
 
@@ -149,31 +174,51 @@ namespace TFIServer
                     var objects = layer.GetProperty("objects");
                     foreach (var obj in objects.EnumerateArray())
                     {
+                        int ix = -1;
+                        map_objects++;
+
                         switch (obj.GetProperty("name").GetString())
                         {
                             case "spawn player":
                                 player_spawn_.Add(RectFromJson(obj));
-                                break;
+                                continue;
 
                             case "water deep":
-                                if (zones_[(int)ZoneIds.WaterDeep] == null)
-                                {
-                                    zones_[(int)ZoneIds.WaterDeep] = new List<List<PointF>>();
-                                }
-                                zones_[(int)ZoneIds.WaterDeep].Add(PolygonFromJson(obj));
+                                ix = ZoneIds.WaterDeep.Index();
                                 break;
 
                             case "boulder":
-                                if (zones_[(int)ZoneIds.Boulders] == null)
-                                {
-                                    zones_[(int)ZoneIds.Boulders] = new List<List<PointF>>();
-                                }
-                                zones_[(int)ZoneIds.Boulders].Add(PolygonFromJson(obj));
+                                ix = ZoneIds.Boulders.Index();
+                                break;
+
+                            case "stairs":
+                                ix = ZoneIds.Stairs.Index();
+                                break;
+
+                            case "threshold 1":
+                                ix = ZoneIds.Threshold1.Index();
+                                break;
+
+                            case "threshold 2":
+                                ix = ZoneIds.Threshold2.Index();
+                                break;
+
+                            case "threshold 3":
+                                ix = ZoneIds.Threshold3.Index();
                                 break;
 
                             default:
-                                break;
+                                Console.WriteLine(
+                                    $"unknown entity {obj.GetProperty("name").GetString()}");
+                                continue;
                         }
+
+                        if (zones_[ix] == null)
+                        {
+                            zones_[ix] = new List<List<PointF>>();
+                        }
+                        zones_[ix].Add(PolygonFromJson(obj));
+
                     }
 
                     object_layers++;
@@ -208,7 +253,9 @@ namespace TFIServer
                     lyr++;
                 }
 
-                Console.WriteLine($"loaded map [{path_map}] {layer_count}x{row_count}x{column_count}");
+                Console.WriteLine($"loaded map [{path_map}]");
+                Console.WriteLine($"tiles: {layer_count} x {row_count} x {column_count}");
+                Console.WriteLine($"zones: {zones_.Length} x {object_layers} count: {map_objects}");
             }
         }
 
@@ -347,7 +394,13 @@ namespace TFIServer
 
             foreach (var zid in (ZoneIds[]) Enum.GetValues(typeof(ZoneIds)))
             {
-                if (InsidePolygonZone(zones_[(int)zid], point))
+                var polygons = zones_[zid.Index()];
+                if (polygons == null)
+                {
+                    continue;
+                }
+
+                if (InsidePolygonZone(polygons, point))
                 {
                     zones |= zid.ToBit();
                 }
