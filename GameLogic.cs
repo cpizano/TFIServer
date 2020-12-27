@@ -109,23 +109,36 @@ namespace TFIServer
 
         internal void MovePlayer(Player player, Vector2 input_direction)
         {
-            var pos = MovePlayerCore(player, input_direction);
+            (var pos, int tz_boost) = MovePlayerCore(player, input_direction);
             if (pos is Vector2 new_position)
             {
                 player.position = new_position;
-                ServerSend.PlayerPosition(player);
+                if (tz_boost != 0)
+                {
+                    // Temporarily boost the Z level. Client side this only
+                    // controls the Z order which is handy.
+                    var zl = player.z_level;
+                    player.z_level = tz_boost;
+                    ServerSend.PlayerPosition(player);
+                    player.z_level = zl;
+                }
+                else
+                {
+                    ServerSend.PlayerPosition(player);
+                }
+
                 // Client is authoritative for rotation: update not sent back to self.
                 ServerSend.PlayerRotation(player);
             }
         }
 
-        internal Vector2? MovePlayerCore(Player player, Vector2 input_direction)
+        internal (Vector2?, int tz_boost) MovePlayerCore(Player player, Vector2 input_direction)
         {
             if (player.transit_state == Player.TransitState.Frozen)
             {
                 // We should not see this because AddPlayer() sets
                 // the player to Ground transitstate.
-                return null;
+                return (null, 0);
             }
             
             // For 3D, Z is forward (towards screen) and +Y is up.
@@ -142,8 +155,23 @@ namespace TFIServer
 
             if (!map_extents_.Contains(point)) {
                 // Keep the players in the map.
-                return null;
+                return (null, 0);
             }
+
+            // The movement is a state machine. Note that for vertical movement
+            // to happen we need a careful physical arrangement of objects in the
+            // map. In particular the stairs are actually comprised of 4 parts:
+            //
+            // threshold  (at level N)
+            // lower stair (at level N)
+            // upper stair (at level M)
+            // upper threshold (at level M)
+            //
+            // So it works like this. Stairs are not passable directly, only
+            // via thresholds which can exit into the stairs (and any other thing),
+            // once in stair mode it can only be exited to other stair no matter
+            // which level and to a threshold which can be the previously traversed
+            // or the one at the other end.
 
             var zones = map_handler_.GetZonesForPoint(point, player.z_level);
  
@@ -152,34 +180,43 @@ namespace TFIServer
                 case Player.TransitState.Ground:
                     if (zones == ZoneBits.None)
                     {
-                        return newPosition;
+                        return (newPosition, 0);
                     }
                     if (zones.Contains(ZoneBits.Threshold))
                     {
                         player.transit_state = Player.TransitState.Threshold;
-                        return newPosition;
+                        return (newPosition, 0);
                     }
-                    // All other zones (Boulders, Water deep, Keep) are not passable.
+                    if (zones.Contains(ZoneBits.Keep))
+                    {
+                        // TODO: remove this case. Keeps are meant to work
+                        // the other way.
+                        return (newPosition, 0);
+                    }
+
+                    // All other zones (Boulders, Water deep) are not passable.
                     break;
                 case Player.TransitState.Threshold:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
-                        return newPosition;
+                        return (newPosition, 0);
                     }
                     if (zones.Contains(ZoneBits.Stairs))
                     {
                         player.transit_state = Player.TransitState.Stairs;
                         player.stair_level = map_handler_.GetStairLevelForPoint(point);
-                        player.z_level = 3;   // hack.
-                        return newPosition;
+                        // The player is on the stairs, temporarily boost the z order.
+                        return (newPosition, 3);
                     }
-                    break;
+                    // everything else means the player exited
+                    player.transit_state = Player.TransitState.Ground;
+                    return (newPosition, 0);
+
                 case Player.TransitState.Stairs:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
-                        player.transit_state = Player.TransitState.Ground;
-                        player.stair_level = - 1;
-                        return newPosition;
+                        player.transit_state = Player.TransitState.Threshold;
+                        return (newPosition, 0);
                     }
 
                     var new_stair_level = map_handler_.GetStairLevelForPoint(point);
@@ -194,13 +231,13 @@ namespace TFIServer
                     }
 
                     player.z_level = new_stair_level;
-                    return newPosition;
+                    return (newPosition, 0);
                 default:
                     throw new Exception("unexpected state");
             }
 
             // No movement allowed.
-            return null;
+            return (null, 0);
         }
 
         internal void Connect(int id)
