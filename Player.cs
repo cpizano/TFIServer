@@ -7,11 +7,20 @@ namespace TFIServer
     // This object methods should only be called from the gamethread.
     class Player
     {
+        public enum TransitState
+        {
+            Frozen,     // Cannot move at all.
+            Ground,     // Can move in the plane.
+            Stairs      // Can move up and down. |threshold_level| should not be zero.
+        };
+
         public readonly int id;
         public readonly string user_name;
 
         public Vector3 position;
         public Quaternion rotation;
+        public TransitState transit_state;
+        public int threshold_level;
 
         public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
         private bool[] inputs_;
@@ -22,6 +31,7 @@ namespace TFIServer
             user_name = username;
             position = spawn_position;
             rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, 0f);
+            transit_state = TransitState.Frozen;
 
             inputs_ = new bool[4];
         }
