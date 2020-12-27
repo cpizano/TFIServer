@@ -174,7 +174,7 @@ namespace TFIServer
             // tracks the current threshold so the value should go
             // from 0 to A to B or from 0 to B to A.
 
-            int new_threshold_level = zones.GetThreshold();
+            int new_threshold_level = 0;  // <-- fix zones.GetThreshold();
             if (new_threshold_level != 0)
             {
                 // Thresholds are always traversable. Even overlapping with other zones.

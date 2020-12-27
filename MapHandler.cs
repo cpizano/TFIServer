@@ -11,9 +11,8 @@ namespace TFIServer
         WaterDeep,
         Boulders,
         Stairs,
-        Threshold1,
-        Threshold2,
-        Threshold3       // keep zones_ array in sync
+        Threshold,
+        Keep              // zone_layer array should be 5 elements.
     }
 
     enum ZoneBits
@@ -23,9 +22,8 @@ namespace TFIServer
         WaterDeep       = 1 << ZoneIds.WaterDeep,
         Boulders        = 1 << ZoneIds.Boulders,
         Stairs          = 1 << ZoneIds.Stairs,
-        Threshold1      = 1 << ZoneIds.Threshold1,
-        Threshold2      = 1 << ZoneIds.Threshold2,
-        Threshold3      = 1 << ZoneIds.Threshold3,
+        Threshold       = 1 << ZoneIds.Threshold,
+        Keep            = 1 << ZoneIds.Keep
     }
 
     static class ZoneExtensions
@@ -43,18 +41,6 @@ namespace TFIServer
         public static int Index(this ZoneIds zid)
         {
             return (int)zid;
-        }
-
-        public static int GetThreshold(this ZoneBits zones)
-        {
-            var z =  zones & (ZoneBits.Threshold1 | ZoneBits.Threshold2 | ZoneBits.Threshold3);
-            return z switch
-            {
-                ZoneBits.Threshold1 => 1,
-                ZoneBits.Threshold2 => 2,
-                ZoneBits.Threshold3 => 3,
-                _ => 0,
-            };
         }
     }
 
@@ -171,7 +157,7 @@ namespace TFIServer
                         continue;
                     }
 
-                    var zone_layer = new List<List<PointF>>[6];
+                    var zone_layer = new List<List<PointF>>[5];
 
                     var objects = layer.GetProperty("objects");
                     foreach (var obj in objects.EnumerateArray())
@@ -197,16 +183,12 @@ namespace TFIServer
                                 ix = ZoneIds.Stairs.Index();
                                 break;
 
-                            case "threshold 1":
-                                ix = ZoneIds.Threshold1.Index();
+                            case "threshold":
+                                ix = ZoneIds.Threshold.Index();
                                 break;
 
-                            case "threshold 2":
-                                ix = ZoneIds.Threshold2.Index();
-                                break;
-
-                            case "threshold 3":
-                                ix = ZoneIds.Threshold3.Index();
+                            case "keep":
+                                ix = ZoneIds.Keep.Index();
                                 break;
 
                             default:
