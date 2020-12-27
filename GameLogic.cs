@@ -146,14 +146,7 @@ namespace TFIServer
                 return null;
             }
 
-            if (player.z_level > 0)
-            {
-                // flying mode, does not collide. This is a temporary
-                // hack to test stairs logic. TODO: remove.
-                return newPosition;
-            }
-
-            var zones = map_handler_.GetZonesForPoint(point);
+            var zones = map_handler_.GetZonesForPoint(point, player.z_level);
             if (zones == ZoneBits.None && player.transit_state == Player.TransitState.Ground)
             {
                 // Short circuit all other calculations.
@@ -208,6 +201,8 @@ namespace TFIServer
                     // Reached a lower level.
                     player.z_level -= 1;
                 }
+
+                Console.WriteLine($"+ [{player.user_name}] at level {player.z_level}");
 
                 player.transit_state = Player.TransitState.Ground;
                 player.threshold_level = new_threshold_level;

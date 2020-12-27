@@ -15,6 +15,7 @@ namespace TFIServer
         Threshold2,
         Threshold3       // keep zones_ array in sync
     }
+
     enum ZoneBits
     {
         // Bitfield usage.
@@ -74,8 +75,9 @@ namespace TFIServer
         // of elements in the x coordinate, in other words the size of each row.
         private int[,,] map_;
 
-        // Zones is one list of polygons per each ZoneId.
-        private readonly List<List<PointF>>[] zones_ = new List<List<PointF>>[6];
+        // Zones is one list of polygons per each ZoneId per object layer
+        // so a poligon is zones[layer][zone][poligon]. 
+        private readonly List<List<List<PointF>>[]> zones_ = new List<List<List<PointF>>[]>();
 
         private List<RectangleF> player_spawn_;
 
@@ -157,9 +159,7 @@ namespace TFIServer
                     throw new Exception($"Map error: firstgid is {firstgid}");
                 }
 
-                // Process object layers here. We flatten them, that is we don't
-                // care the ordering of their layers.
-                int object_layers = 0;
+                // Process object layers here.
                 int map_objects = 0;
 
                 player_spawn_ = new List<RectangleF>();
@@ -170,6 +170,8 @@ namespace TFIServer
                     {
                         continue;
                     }
+
+                    var zone_layer = new List<List<PointF>>[6];
 
                     var objects = layer.GetProperty("objects");
                     foreach (var obj in objects.EnumerateArray())
@@ -213,18 +215,18 @@ namespace TFIServer
                                 continue;
                         }
 
-                        if (zones_[ix] == null)
+                        if (zone_layer[ix] == null)
                         {
-                            zones_[ix] = new List<List<PointF>>();
+                            zone_layer[ix] = new List<List<PointF>>();
                         }
-                        zones_[ix].Add(PolygonFromJson(obj));
+                        zone_layer[ix].Add(PolygonFromJson(obj));
 
                     }
 
-                    object_layers++;
+                    zones_.Add(zone_layer);
                 }
 
-                layer_count -= object_layers;
+                layer_count -= zones_.Count;
                 map_ = new int[layer_count, row_count, column_count];
 
                 // Only process tile layers on this loop.
@@ -255,7 +257,7 @@ namespace TFIServer
 
                 Console.WriteLine($"loaded map [{path_map}]");
                 Console.WriteLine($"tiles: {layer_count} x {row_count} x {column_count}");
-                Console.WriteLine($"zones: {zones_.Length} x {object_layers} count: {map_objects}");
+                Console.WriteLine($"zones: {zones_.Count} x {6} count: {map_objects}");
             }
         }
 
@@ -388,13 +390,18 @@ namespace TFIServer
         // if only evaluates up to finding one single hit of each type. For poligons
         // we use the optimized winding number which is a bit more expensive but can
         // handle complex poligons.
-        public ZoneBits GetZonesForPoint(PointF point)
+        public ZoneBits GetZonesForPoint(PointF point, int level)
         {
             ZoneBits zones = ZoneBits.None;
 
+            if (level >= zones_.Count)
+            {
+                return zones;
+            }
+
             foreach (var zid in (ZoneIds[]) Enum.GetValues(typeof(ZoneIds)))
             {
-                var polygons = zones_[zid.Index()];
+                var polygons = zones_[level][zid.Index()];
                 if (polygons == null)
                 {
                     continue;
