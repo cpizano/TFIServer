@@ -299,7 +299,7 @@ namespace TFIServer
             StringBuilder sb = new StringBuilder(120);
             foreach (var p in players_.Values)
             {
-                sb.AppendLine($"   player {p.id} : {p.user_name} @ {p.position}");
+                sb.AppendLine($" id:{p.id}:{p.user_name} @ {p.position} z:{p.z_level} s:{p.transit_state}");
             }
 
             Console.Write(sb.ToString());
