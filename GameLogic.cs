@@ -46,7 +46,7 @@ namespace TFIServer
             // First lets send the map.
             map_handler_.SendMap(id);
 
-            var new_player = new Player(id, player_name, GetSpawnPoint());
+            var new_player = new Player(id, player_name, GetSpawnPoint(), 0);
             new_player.transit_state = Player.TransitState.Ground;
             new_player.threshold_level = 0;
 
@@ -111,7 +111,7 @@ namespace TFIServer
         internal void MovePlayer(Player player, Vector2 input_direction)
         {
             var pos = MovePlayerCore(player, input_direction);
-            if (pos is Vector3 new_position)
+            if (pos is Vector2 new_position)
             {
                 player.position = new_position;
                 ServerSend.PlayerPosition(player);
@@ -120,7 +120,7 @@ namespace TFIServer
             }
         }
 
-        internal Vector3? MovePlayerCore(Player player, Vector2 input_direction)
+        internal Vector2? MovePlayerCore(Player player, Vector2 input_direction)
         {
             if (player.transit_state == Player.TransitState.Frozen)
             {
@@ -133,10 +133,10 @@ namespace TFIServer
             // Vector3 forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
             // Vector3 right = Vector3.Normalize(Vector3.Cross(forward, new Vector3(0, 1, 0)));
 
-            Vector3 forward = Vector3.UnitY;
-            Vector3 right = -Vector3.UnitX;
+            Vector2 forward = Vector2.UnitY;
+            Vector2 right = -Vector2.UnitX;
 
-            Vector3 move_direction = (right * input_direction.X) + (forward * input_direction.Y);
+            var move_direction = (right * input_direction.X) + (forward * input_direction.Y);
             var newPosition = player.position + (move_direction * player.move_speed);
 
             var point = new PointF(newPosition.X, newPosition.Y);
@@ -146,7 +146,7 @@ namespace TFIServer
                 return null;
             }
 
-            if (player.position.Z > 0.1)
+            if (player.z_level > 0)
             {
                 // flying mode, does not collide. This is a temporary
                 // hack to test stairs logic. TODO: remove.
@@ -201,12 +201,12 @@ namespace TFIServer
                 else if (diff > 0)
                 {
                     // Reached an upper level.
-                    newPosition.Z += 1.0f;
+                    player.z_level += 1;
                 } 
                 else if (diff < 0)
                 {
                     // Reached a lower level.
-                    newPosition.Z -= 1.0f;
+                    player.z_level -= 1;
                 }
 
                 player.transit_state = Player.TransitState.Ground;
@@ -271,7 +271,7 @@ namespace TFIServer
             }
         }
 
-        internal Vector3 GetSpawnPoint()
+        internal Vector2 GetSpawnPoint()
         {
             foreach (var spawn in map_handler_.GetPlayerSpawns())
             {
@@ -288,12 +288,12 @@ namespace TFIServer
             found:;
             }
             // No spawn point free! TODO: do something better.
-            return new Vector3(20, 20, 0);
+            return new Vector2(20, 20);
         }
 
-        internal Vector3 GetMidRectVect(RectangleF r)
+        internal Vector2 GetMidRectVect(RectangleF r)
         {
-            return new Vector3((r.X + r.Width / 2), (r.Y + r.Height / 2), 0);
+            return new Vector2((r.X + r.Width / 2), (r.Y + r.Height / 2));
         }
 
         internal void DumpPlayers() 

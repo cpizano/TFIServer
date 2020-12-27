@@ -166,6 +166,13 @@ namespace TFIServer
             Write(_value.Length); // Add the length of the string to the packet
             buffer.AddRange(Encoding.ASCII.GetBytes(_value)); // Add the string itself
         }
+        /// <summary>Adds a Vector2 to the packet.</summary>
+        /// <param name="_value">The Vector2 to add.</param>
+        public void Write(Vector2 _value)
+        {
+            Write(_value.X);
+            Write(_value.Y);
+        }
         /// <summary>Adds a Vector3 to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
         public void Write(Vector3 _value)

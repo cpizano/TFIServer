@@ -51,6 +51,7 @@ namespace TFIServer
                 _packet.Write(_player.id);
                 _packet.Write(_player.user_name);
                 _packet.Write(_player.position);
+                _packet.Write(_player.z_level);
                 _packet.Write(_player.rotation);
 
                 Server.SendTCPData(_toClient, _packet);
@@ -63,6 +64,7 @@ namespace TFIServer
             {
                 _packet.Write(_player.id);
                 _packet.Write(_player.position);
+                _packet.Write(_player.z_level);
 
                 Server.SendUDPDataToAll(0, _packet);
             }
@@ -93,7 +95,7 @@ namespace TFIServer
         #endregion
 
         // Keep this last. It controls the protocol version via cheeky
-        // line numbers. Last was 99.
+        // line numbers. Last was 101.
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitProtocolVersion()
         {

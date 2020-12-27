@@ -17,7 +17,11 @@ namespace TFIServer
         public readonly int id;
         public readonly string user_name;
 
-        public Vector3 position;
+        // Position of the player. The Z axis is discrete and corresponds to
+        // the client sorting order.
+        public Vector2 position;
+        public int z_level;
+
         public Quaternion rotation;
         public TransitState transit_state;
         public int threshold_level;
@@ -25,11 +29,13 @@ namespace TFIServer
         public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
         private bool[] inputs_;
 
-        public Player(int _id, string username, Vector3 spawn_position)
+        public Player(int _id, string username, Vector2 spawn_position, int _z_level)
         {
             id = _id;
             user_name = username;
             position = spawn_position;
+            z_level = _z_level;
+
             rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, 0f);
             transit_state = TransitState.Frozen;
 
@@ -63,12 +69,6 @@ namespace TFIServer
             game.MovePlayer(this, input_direction);
 
             inputs_[0] = inputs_[1] = inputs_[2] = inputs_[3] = false;
-        }
-
-        public bool Hit(Vector3 point)
-        {
-            var delta = position - point;
-            return delta.LengthSquared() < Constants.HIT_RADIUS_SQR;
         }
 
         public void SetInput(bool[] _inputs, Quaternion _rotation)

@@ -36,7 +36,7 @@ namespace TFIServer
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.White;
             Console.Title = "TFI Game server";
-            Console.WriteLine($"Server v201220a started at {DateTime.Now} ");
+            Console.WriteLine($"Server v20.12.26a started at {DateTime.Now} ");
             Console.WriteLine($"+ Address {GetLocalIPAddress()} : {udp_port} ");
             Console.WriteLine($"+ Directory: {System.IO.Directory.GetCurrentDirectory()}");
             Console.ForegroundColor = ConsoleColor.DarkYellow;
