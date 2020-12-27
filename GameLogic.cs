@@ -48,7 +48,6 @@ namespace TFIServer
 
             var new_player = new Player(id, player_name, GetSpawnPoint(), 0);
             new_player.transit_state = Player.TransitState.Ground;
-            new_player.threshold_level = 0;
 
             // Tell new player about all other existing players
             foreach (Player player in players_.Values)
@@ -147,100 +146,61 @@ namespace TFIServer
             }
 
             var zones = map_handler_.GetZonesForPoint(point, player.z_level);
-            if (zones == ZoneBits.None && player.transit_state == Player.TransitState.Ground)
+ 
+            switch (player.transit_state)
             {
-                // Short circuit all other calculations.
-                player.threshold_level = 0;
-                return newPosition;
-            }
+                case Player.TransitState.Ground:
+                    if (zones == ZoneBits.None)
+                    {
+                        return newPosition;
+                    }
+                    if (zones.Contains(ZoneBits.Threshold))
+                    {
+                        player.transit_state = Player.TransitState.Threshold;
+                        return newPosition;
+                    }
+                    // All other zones (Boulders, Water deep, Keep) are not passable.
+                    break;
+                case Player.TransitState.Threshold:
+                    if (zones.Contains(ZoneBits.Threshold))
+                    {
+                        return newPosition;
+                    }
+                    if (zones.Contains(ZoneBits.Stairs))
+                    {
+                        player.transit_state = Player.TransitState.Stairs;
+                        player.stair_level = map_handler_.GetStairLevelForPoint(point);
+                        player.z_level = 3;   // hack.
+                        return newPosition;
+                    }
+                    break;
+                case Player.TransitState.Stairs:
+                    if (zones.Contains(ZoneBits.Threshold))
+                    {
+                        player.transit_state = Player.TransitState.Ground;
+                        player.stair_level = - 1;
+                        return newPosition;
+                    }
 
-            // Stair handling.
-            // This is an approach that even though I just cooked it
-            // needs a serious re-think. The premise here is that all
-            // map objects are still a single layer so traversing stairs
-            // is a state machine with the map objects as follows
-            // - Threshold zone A on the bottom
-            // - stairs zone
-            // - Threshold zone B on the top
-            // These 3 zones are overlapping:
-            //
-            //   [              (  ]        [  )          ]
-            //     threshold A       stairs   threshold B
-            //
-            // The idea is that the
-            // player traverses them in either order which when done
-            // it changes the Z axis by +1 or -1 which client side
-            // should change the sort order. The |threshold_level|
-            // tracks the current threshold so the value should go
-            // from 0 to A to B or from 0 to B to A.
+                    var new_stair_level = map_handler_.GetStairLevelForPoint(point);
+                    if (new_stair_level < 0)
+                    {
+                        break;
+                    }
 
-            int new_threshold_level = 0;  // <-- fix zones.GetThreshold();
-            if (new_threshold_level != 0)
-            {
-                // Thresholds are always traversable. Even overlapping with other zones.
-                if (player.transit_state == Player.TransitState.Ground)
-                {
-                    player.threshold_level = new_threshold_level;
+                    if (new_stair_level != player.stair_level)
+                    {
+                        Console.WriteLine($"+ [{player.user_name}] level {new_stair_level}");
+                    }
+
+                    player.z_level = new_stair_level;
                     return newPosition;
-                }
-
-                // Player is in stairs mode.
-                var diff = new_threshold_level - player.threshold_level;
-                if (diff == 0)
-                {
-                    // Same threshold.
-                    return newPosition;
-                }
-                else if (diff > 0)
-                {
-                    // Reached an upper level.
-                    player.z_level += 1;
-                } 
-                else if (diff < 0)
-                {
-                    // Reached a lower level.
-                    player.z_level -= 1;
-                }
-
-                Console.WriteLine($"+ [{player.user_name}] at level {player.z_level}");
-
-                player.transit_state = Player.TransitState.Ground;
-                player.threshold_level = new_threshold_level;
-                return newPosition;
-            } else
-
-            // Player not in a threshold.
-
-            if (player.threshold_level != 0 && zones.Contains(ZoneBits.Stairs))
-            {
-                // Player was in a threshold and now has entered the stairs.
-                player.transit_state = Player.TransitState.Stairs;
-                return newPosition;
+                default:
+                    throw new Exception("unexpected state");
             }
 
-            if (player.transit_state == Player.TransitState.Stairs)
-            {
-                // Player in stairs mode needs to keep confined to the stairs
-                // until it exits it via a threshold.
-                if (!zones.Contains(ZoneBits.Stairs))
-                {
-                    return null;
-                }
-                // Still on stairs, which are always traversable. TODO: Here we
-                // should be applying some "Y" offset.
-                return newPosition;
-            }
-
-            // Player in ground mode.
-            if (zones.Contains(ZoneBits.WaterDeep) ||
-                zones.Contains(ZoneBits.Boulders) ||
-                zones.Contains(ZoneBits.Stairs))
-            {
-                // Can't walk on water, stairs or across boulders.
-                return null;
-            }
-
-            return newPosition;
+            // No movement allowed.
+            return null;
         }
 
         internal void Connect(int id)

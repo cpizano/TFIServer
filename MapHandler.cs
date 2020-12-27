@@ -356,9 +356,14 @@ namespace TFIServer
             return wn;
         }
 
-        private static bool InsidePolygonZone(List<List<PointF>> poligons, PointF point)
+        private static bool InsidePolygonZone(List<List<PointF>> polygons, PointF point)
         {
-            foreach (var poly in poligons)
+            if (polygons == null)
+            {
+                return false;
+            }
+
+            foreach (var poly in polygons)
             {
                 if (WindingNumber(point, poly) != 0)
                 {
@@ -384,11 +389,6 @@ namespace TFIServer
             foreach (var zid in (ZoneIds[]) Enum.GetValues(typeof(ZoneIds)))
             {
                 var polygons = zones_[level][zid.Index()];
-                if (polygons == null)
-                {
-                    continue;
-                }
-
                 if (InsidePolygonZone(polygons, point))
                 {
                     zones |= zid.ToBit();
@@ -397,5 +397,22 @@ namespace TFIServer
 
             return zones;
         }
+
+        // Returns 0 to N for the stair for a given point
+        // -1 if no stairs found for the point.
+        public int GetStairLevelForPoint(PointF point)
+        {
+            for (int level = 0; level != zones_.Count; level++)
+            {
+                var polygons = zones_[level][ZoneIds.Stairs.Index()];
+                if (InsidePolygonZone(polygons, point))
+                {
+                    return level;
+                }
+            }
+
+            return -1;
+        }
+
     }
 }

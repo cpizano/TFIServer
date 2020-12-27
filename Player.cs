@@ -11,7 +11,8 @@ namespace TFIServer
         {
             Frozen,     // Cannot move at all.
             Ground,     // Can move in the plane.
-            Stairs      // Can move up and down. |threshold_level| should not be zero.
+            Threshold,  // Entering or exiting a special zone
+            Stairs      // Can move up and down.
         };
 
         public readonly int id;
@@ -21,10 +22,10 @@ namespace TFIServer
         // the client sorting order.
         public Vector2 position;
         public int z_level;
+        public int stair_level;
 
         public Quaternion rotation;
         public TransitState transit_state;
-        public int threshold_level;
 
         public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
         private bool[] inputs_;
@@ -35,6 +36,7 @@ namespace TFIServer
             user_name = username;
             position = spawn_position;
             z_level = _z_level;
+            stair_level = -1;
 
             rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, 0f);
             transit_state = TransitState.Frozen;
