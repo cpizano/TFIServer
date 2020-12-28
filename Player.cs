@@ -10,9 +10,10 @@ namespace TFIServer
         public enum TransitState
         {
             Frozen,     // Cannot move at all.
-            Ground,     // Can move in the plane.
+            Ground,     // Can move in the plane anywhere
             Threshold,  // Entering or exiting a special zone
-            Stairs      // Can move up and down.
+            Stairs,     // Can move up and down.
+            ClosedArea, // Restricted to an area.
         };
 
         public readonly int id;

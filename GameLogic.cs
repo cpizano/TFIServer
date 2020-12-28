@@ -187,13 +187,6 @@ namespace TFIServer
                         player.transit_state = Player.TransitState.Threshold;
                         return (newPosition, 0);
                     }
-                    if (zones.Contains(ZoneBits.Keep))
-                    {
-                        // TODO: remove this case. Keeps are meant to work
-                        // the other way.
-                        return (newPosition, 0);
-                    }
-
                     // All other zones (Boulders, Water deep) are not passable.
                     break;
                 case Player.TransitState.Threshold:
@@ -207,6 +200,11 @@ namespace TFIServer
                         player.stair_level = map_handler_.GetStairLevelForPoint(point);
                         // The player is on the stairs, temporarily boost the z order.
                         return (newPosition, 3);
+                    }
+                    if (zones.Contains(ZoneBits.ClosedArea))
+                    {
+                        player.transit_state = Player.TransitState.ClosedArea;
+                        return (newPosition, 0);
                     }
                     // everything else means the player exited
                     player.transit_state = Player.TransitState.Ground;
@@ -233,6 +231,18 @@ namespace TFIServer
 
                     player.z_level = new_stair_level;
                     return (newPosition, 3);
+
+                case Player.TransitState.ClosedArea:
+                    if (zones.Contains(ZoneBits.Threshold))
+                    {
+                        player.transit_state = Player.TransitState.Threshold;
+                        return (newPosition, 0);
+                    }
+                    if (zones.Contains(ZoneBits.ClosedArea))
+                    {
+                        return (newPosition, 0);
+                    }
+                     break;
                 default:
                     throw new Exception("unexpected state");
             }

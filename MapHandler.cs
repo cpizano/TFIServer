@@ -12,7 +12,7 @@ namespace TFIServer
         Boulders,
         Stairs,
         Threshold,
-        Keep              // zone_layer array should be 5 elements.
+        ClosedArea              // zone_layer array should be 5 elements.
     }
 
     enum ZoneBits
@@ -23,7 +23,7 @@ namespace TFIServer
         Boulders        = 1 << ZoneIds.Boulders,
         Stairs          = 1 << ZoneIds.Stairs,
         Threshold       = 1 << ZoneIds.Threshold,
-        Keep            = 1 << ZoneIds.Keep
+        ClosedArea      = 1 << ZoneIds.ClosedArea
     }
 
     static class ZoneExtensions
@@ -187,8 +187,8 @@ namespace TFIServer
                                 ix = ZoneIds.Threshold.Index();
                                 break;
 
-                            case "keep":
-                                ix = ZoneIds.Keep.Index();
+                            case "closed area":
+                                ix = ZoneIds.ClosedArea.Index();
                                 break;
 
                             default:
