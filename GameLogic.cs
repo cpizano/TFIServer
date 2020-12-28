@@ -222,16 +222,17 @@ namespace TFIServer
                     var new_stair_level = map_handler_.GetStairLevelForPoint(point);
                     if (new_stair_level < 0)
                     {
-                        break;
+                        // Can't exit stairs without a threshold.
+                        return (null, 3);
                     }
 
-                    if (new_stair_level != player.stair_level)
+                    if (new_stair_level != player.z_level)
                     {
                         Console.WriteLine($"+ [{player.user_name}] level {new_stair_level}");
                     }
 
                     player.z_level = new_stair_level;
-                    return (newPosition, 0);
+                    return (newPosition, 3);
                 default:
                     throw new Exception("unexpected state");
             }
