@@ -44,6 +44,12 @@ namespace TFIServer
         }
     }
 
+    struct MapCell
+    {
+        public short tile;
+        public short rle;
+    }
+
     class MapHandler
     {
 
@@ -59,7 +65,7 @@ namespace TFIServer
 
         // The map is [layer][rows][columns]. The |columns| is the count
         // of elements in the x coordinate, in other words the size of each row.
-        private int[,,] map_;
+        private MapCell[,,] map_;
 
         // Zones is one list of polygons per each ZoneId per object layer
         // so a poligon is zones[layer][zone][poligon]. 
@@ -209,7 +215,7 @@ namespace TFIServer
                 }
 
                 layer_count -= zones_.Count;
-                map_ = new int[layer_count, row_count, column_count];
+                map_ = new MapCell[layer_count, row_count, column_count];
 
                 // Only process tile layers on this loop.
                 int lyr = 0;
@@ -231,11 +237,13 @@ namespace TFIServer
                             continue;
                         }
 
-                        map_[lyr, col / row_count, col % column_count] = id;
+                        map_[lyr, col / row_count, col % column_count].tile = id;
                         col++;
                     }
                     lyr++;
                 }
+
+                RLECodec.EncodeInPlace(map_);
 
                 Console.WriteLine($"loaded map [{path_map}]");
                 Console.WriteLine($"tiles: {layer_count} x {row_count} x {column_count}");
@@ -291,15 +299,19 @@ namespace TFIServer
             return new SizeF(w / scale_, h / scale_);
         }
 
-        // So C# cannot return a reference to a row of a square array. Rather
-        // than abandoning square arrays we can use a simple generator. Maybe
-        // it is not as inneficient as it looks. 
-        private IEnumerable<short> GetRowIter(int layer, int row)
+   
+        // The row iterator returns the row RLE encoded. Most of the
+        // work was already done once by RLECodec when the map was
+        // loaded.
+        private IEnumerable<MapCell> GetRowIter(int layer, int row)
         {
-            for (var ix = 0; ix < Column_count; ix++)
+            int ix = 0;
+            do
             {
-                yield return (short)map_[layer, row, ix];
-            }
+                var cell = map_[layer, row, ix];
+                yield return cell;
+                ix += cell.rle;
+            } while (ix < Column_count);
         }
 
         // IsLeft(): tests if a point is Left|On|Right of an infinite line.

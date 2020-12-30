@@ -28,7 +28,7 @@ namespace TFIServer
         }
 
         public static void MapLayerRow(int _toClient, int layer, int row, int row_len,
-            IEnumerable<short> cells)
+            IEnumerable<MapCell> cells)
         {
             using (var _packet = new Packet((int)ServerPackets.mapLayerRow))
             {
@@ -37,7 +37,8 @@ namespace TFIServer
                 _packet.Write(row_len);
                 foreach(var cell in cells)
                 {
-                    _packet.Write(cell);
+                    _packet.Write(cell.tile);
+                    _packet.Write(cell.rle);
                 }
 
                 Server.SendTCPData(_toClient, _packet);
@@ -95,7 +96,7 @@ namespace TFIServer
         #endregion
 
         // Keep this last. It controls the protocol version via cheeky
-        // line numbers. Last was 101.
+        // line numbers. Last was 103.
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitProtocolVersion()
         {
