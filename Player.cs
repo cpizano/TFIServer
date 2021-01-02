@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Numerics;
 using System.Text;
 
@@ -23,7 +24,7 @@ namespace TFIServer
         // the client sorting order.
         public Vector2 position;
         public int z_level;
-        public int stair_level;
+        public int health;
 
         public Quaternion rotation;
         public TransitState transit_state;
@@ -37,7 +38,7 @@ namespace TFIServer
             user_name = username;
             position = spawn_position;
             z_level = _z_level;
-            stair_level = -1;
+            health = 100;
 
             rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, 0f);
             transit_state = TransitState.Frozen;

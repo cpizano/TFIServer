@@ -13,6 +13,7 @@ namespace TFIServer
         spawnPlayer,
         playerPosition,
         playerRotation,
+        playerHealth,
         playerQuit,
         mapLayerRow,
     }
