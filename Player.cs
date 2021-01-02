@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Drawing;
 using System.Numerics;
 using System.Text;
 
@@ -20,11 +21,8 @@ namespace TFIServer
         public readonly int id;
         public readonly string user_name;
 
-        // Position of the player. The Z axis is discrete and corresponds to
-        // the client sorting order.
+        private Point input_direction;
         private Vector2 position;
-        private Vector2 input_direction;
-
         public int z_level;
         public int health;
 
@@ -45,7 +43,7 @@ namespace TFIServer
         }
         public void Update(GameLogic game)
         {
-            if (input_direction == Vector2.Zero)
+            if (input_direction == Point.Empty)
             {
                 return;
             }
@@ -69,7 +67,7 @@ namespace TFIServer
 
         public void SetInput(bool[] inputs)
         {
-            input_direction = Vector2.Zero;
+            input_direction = Point.Empty;
 
             if (inputs[0])  // W
             {
