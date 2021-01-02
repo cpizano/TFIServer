@@ -12,7 +12,7 @@ namespace TFIServer
         welcome = 1,
         spawnPlayer,
         playerPosition,
-        playerRotation,
+        playerRotation,     // unused.
         playerHealth,
         playerQuit,
         mapLayerRow,

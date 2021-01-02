@@ -28,7 +28,6 @@ namespace TFIServer
         public int z_level;
         public int health;
 
-        public Quaternion rotation;
         public TransitState transit_state;
 
         public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
@@ -42,8 +41,6 @@ namespace TFIServer
             position = spawn_position;
             z_level = _z_level;
             health = 100;
-
-            rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, 0f);
             transit_state = TransitState.Frozen;
         }
         public void Update(GameLogic game)
@@ -70,7 +67,7 @@ namespace TFIServer
             }
         }
 
-        public void SetInput(bool[] inputs, Quaternion _rotation)
+        public void SetInput(bool[] inputs)
         {
             input_direction = Vector2.Zero;
 
@@ -90,8 +87,6 @@ namespace TFIServer
             {
                 input_direction.X -= 1;
             }
-
-            rotation = _rotation;
         }
     }
 }

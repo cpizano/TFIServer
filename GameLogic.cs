@@ -104,7 +104,7 @@ namespace TFIServer
             ServerSend.PlayerQuit(player, 0);
         }
 
-        internal void PlayerInput(int from_client, bool[] inputs, Quaternion rotation)
+        internal void PlayerInput(int from_client, bool[] inputs)
         {
             if (!players_.TryGetValue(from_client, out var player))
             {
@@ -112,7 +112,7 @@ namespace TFIServer
                 return;
             }
 
-            player.SetInput(inputs, rotation);
+            player.SetInput(inputs);
         }
 
         internal Vector2? MovePlayer(Player player, Vector2 proposed_position)
@@ -133,9 +133,6 @@ namespace TFIServer
                 {
                     ServerSend.PlayerPosition(player);
                 }
-
-                // Client is authoritative for rotation: update not sent back to self.
-                ServerSend.PlayerRotation(player);
                 return new_position;
             }
             return null;

@@ -38,9 +38,7 @@ namespace TFIServer
             {
                 _inputs[i] = packet.ReadBool();
             }
-            Quaternion _rotation = packet.ReadQuaternion();
-
-            game.PlayerInput(from_client, _inputs, _rotation);
+            game.PlayerInput(from_client, _inputs);
         }
 
         public static void SessionEnd(GameLogic game, int from_client, Packet packet)
