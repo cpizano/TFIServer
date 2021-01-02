@@ -63,7 +63,7 @@ namespace TFIServer
                 ServerSend.SpawnPlayer(player.id, new_player);
             }
 
-            Console.WriteLine($"+ [{player_name}] accepted as player {id} @ {new_player.position}.");
+            Console.WriteLine($"+ [{player_name}] accepted as player {id} @ {new_player.Position}.");
         }
         public void UpdateFixed(long ticks)
         {
@@ -114,12 +114,12 @@ namespace TFIServer
             player.SetInput(inputs, rotation);
         }
 
-        internal void MovePlayer(Player player, Vector2 input_direction)
+        internal Vector2? MovePlayer(Player player, Vector2 input_direction)
         {
             (var pos, int tz_boost) = MovePlayerCore(player, input_direction);
             if (pos is Vector2 new_position)
             {
-                player.position = new_position;
+           
                 if (tz_boost != 0)
                 {
                     // Temporarily boost the Z level. Client side this only
@@ -136,10 +136,12 @@ namespace TFIServer
 
                 // Client is authoritative for rotation: update not sent back to self.
                 ServerSend.PlayerRotation(player);
+                return new_position;
             }
+            return null;
         }
 
-        internal (Vector2?, int tz_boost) MovePlayerCore(Player player, Vector2 input_direction)
+        internal (Vector2?, int tz_boost) MovePlayerCore(Player player, Vector2 new_position)
         {
             if (player.transit_state == Player.TransitState.Frozen)
             {
@@ -148,17 +150,7 @@ namespace TFIServer
                 return (null, 0);
             }
             
-            // For 3D, Z is forward (towards screen) and +Y is up.
-            // Vector3 forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
-            // Vector3 right = Vector3.Normalize(Vector3.Cross(forward, new Vector3(0, 1, 0)));
-
-            Vector2 forward = Vector2.UnitY;
-            Vector2 right = -Vector2.UnitX;
-
-            var move_direction = (right * input_direction.X) + (forward * input_direction.Y);
-            var newPosition = player.position + (move_direction * player.move_speed);
-
-            var point = new PointF(newPosition.X, newPosition.Y);
+            var point = new PointF(new_position.X, new_position.Y);
 
             if (!map_extents_.Contains(point)) {
                 // Keep the players in the map.
@@ -187,40 +179,40 @@ namespace TFIServer
                 case Player.TransitState.Ground:
                     if (zones == ZoneBits.None)
                     {
-                        return (newPosition, 0);
+                        return (new_position, 0);
                     }
                     if (zones.Contains(ZoneBits.Threshold))
                     {
                         player.transit_state = Player.TransitState.Threshold;
-                        return (newPosition, 0);
+                        return (new_position, 0);
                     }
                     // All other zones (Boulders, Water deep) are not passable.
                     break;
                 case Player.TransitState.Threshold:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
-                        return (newPosition, 0);
+                        return (new_position, 0);
                     }
                     if (zones.Contains(ZoneBits.Stairs))
                     {
                         player.transit_state = Player.TransitState.Stairs;
                         // The player is on the stairs, temporarily boost the z order.
-                        return (newPosition, 3);
+                        return (new_position, 3);
                     }
                     if (zones.Contains(ZoneBits.ClosedArea))
                     {
                         player.transit_state = Player.TransitState.ClosedArea;
-                        return (newPosition, 0);
+                        return (new_position, 0);
                     }
                     // everything else means the player exited
                     player.transit_state = Player.TransitState.Ground;
-                    return (newPosition, 0);
+                    return (new_position, 0);
 
                 case Player.TransitState.Stairs:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
                         player.transit_state = Player.TransitState.Threshold;
-                        return (newPosition, 0);
+                        return (new_position, 0);
                     }
 
                     var new_stair_level = map_handler_.GetStairLevelForPoint(point);
@@ -236,17 +228,17 @@ namespace TFIServer
                     }
 
                     player.z_level = new_stair_level;
-                    return (newPosition, 3);
+                    return (new_position, 3);
 
                 case Player.TransitState.ClosedArea:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
                         player.transit_state = Player.TransitState.Threshold;
-                        return (newPosition, 0);
+                        return (new_position, 0);
                     }
                     if (zones.Contains(ZoneBits.ClosedArea))
                     {
-                        return (newPosition, 0);
+                        return (new_position, 0);
                     }
                      break;
                 default:
@@ -286,7 +278,7 @@ namespace TFIServer
             {
                 foreach (var player in players_.Values)
                 {
-                    if (spawn.Contains(player.position.X, player.position.Y))
+                    if (spawn.Contains(player.Position.X, player.Position.Y))
                     {
                         goto found;
                     }
@@ -316,7 +308,7 @@ namespace TFIServer
             StringBuilder sb = new StringBuilder(120);
             foreach (var p in players_.Values)
             {
-                sb.AppendLine($" id:{p.id}:{p.user_name} @ {p.position} z:{p.z_level} s:{p.transit_state}");
+                sb.AppendLine($" id:{p.id}:{p.user_name} @ {p.Position} z:{p.z_level} s:{p.transit_state}");
             }
 
             Console.Write(sb.ToString());

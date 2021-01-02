@@ -22,7 +22,9 @@ namespace TFIServer
 
         // Position of the player. The Z axis is discrete and corresponds to
         // the client sorting order.
-        public Vector2 position;
+        private Vector2 position;
+        private Vector2 input_direction;
+
         public int z_level;
         public int health;
 
@@ -30,7 +32,8 @@ namespace TFIServer
         public TransitState transit_state;
 
         public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
-        private bool[] inputs_;
+
+        public Vector2 Position { get => position; }
 
         public Player(int _id, string username, Vector2 spawn_position, int _z_level)
         {
@@ -42,42 +45,52 @@ namespace TFIServer
 
             rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, 0f);
             transit_state = TransitState.Frozen;
-
-            inputs_ = new bool[4];
         }
         public void Update(GameLogic game)
         {
-            Vector2 input_direction = Vector2.Zero;
-            if (inputs_[0])  // W
-            {
-                input_direction.Y += 1;
-            }
-            if (inputs_[1])  // S
-            {
-                input_direction.Y -= 1;
-            }
-            if (inputs_[2]) // A
-            {
-                input_direction.X += 1;
-            }
-            if (inputs_[3]) // D
-            {
-                input_direction.X -= 1;
-            }
-
             if (input_direction == Vector2.Zero)
             {
                 return;
             }
 
-            game.MovePlayer(this, input_direction);
+            // For 3D, Z is forward (towards screen) and +Y is up.
+            // Vector3 forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
+            // Vector3 right = Vector3.Normalize(Vector3.Cross(forward, new Vector3(0, 1, 0)));
 
-            inputs_[0] = inputs_[1] = inputs_[2] = inputs_[3] = false;
+            Vector2 forward = Vector2.UnitY;
+            Vector2 right = -Vector2.UnitX;
+
+            var move_direction = (right * input_direction.X) + (forward * input_direction.Y);
+            var proposed_position = position + (move_direction * move_speed);
+
+            var res = game.MovePlayer(this, proposed_position);
+            if (res is Vector2 new_position)
+            {
+                position = new_position;
+            }
         }
 
-        public void SetInput(bool[] _inputs, Quaternion _rotation)
+        public void SetInput(bool[] inputs, Quaternion _rotation)
         {
-            inputs_ = _inputs;
+            input_direction = Vector2.Zero;
+
+            if (inputs[0])  // W
+            {
+                input_direction.Y += 1;
+            }
+            if (inputs[1])  // S
+            {
+                input_direction.Y -= 1;
+            }
+            if (inputs[2]) // A
+            {
+                input_direction.X += 1;
+            }
+            if (inputs[3]) // D
+            {
+                input_direction.X -= 1;
+            }
+
             rotation = _rotation;
         }
     }

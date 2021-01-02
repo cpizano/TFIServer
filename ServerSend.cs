@@ -51,7 +51,7 @@ namespace TFIServer
             {
                 _packet.Write(_player.id);
                 _packet.Write(_player.user_name);
-                _packet.Write(_player.position);
+                _packet.Write(_player.Position);
                 _packet.Write(_player.z_level);
                 _packet.Write(_player.rotation);
                 _packet.Write(_player.health);
@@ -65,7 +65,7 @@ namespace TFIServer
             using (Packet _packet = new Packet((int)ServerPackets.playerPosition))
             {
                 _packet.Write(_player.id);
-                _packet.Write(_player.position);
+                _packet.Write(_player.Position);
                 _packet.Write(_player.z_level);
 
                 Server.SendUDPDataToAll(0, _packet);
