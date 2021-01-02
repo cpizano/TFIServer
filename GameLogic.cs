@@ -114,12 +114,11 @@ namespace TFIServer
             player.SetInput(inputs, rotation);
         }
 
-        internal Vector2? MovePlayer(Player player, Vector2 input_direction)
+        internal Vector2? MovePlayer(Player player, Vector2 proposed_position)
         {
-            (var pos, int tz_boost) = MovePlayerCore(player, input_direction);
+            (var pos, int tz_boost) = MovePlayerCore(player, proposed_position);
             if (pos is Vector2 new_position)
             {
-           
                 if (tz_boost != 0)
                 {
                     // Temporarily boost the Z level. Client side this only
