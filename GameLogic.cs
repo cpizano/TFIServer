@@ -95,6 +95,7 @@ namespace TFIServer
         {
             if (!players_.TryGetValue(from_client, out var player))
             {
+                Console.WriteLine($"invalid quit from {from_client} client id");
                 return;
             }
 
@@ -104,7 +105,13 @@ namespace TFIServer
 
         internal void PlayerInput(int from_client, bool[] inputs, Quaternion rotation)
         {
-            players_[from_client].SetInput(inputs, rotation);
+            if (!players_.TryGetValue(from_client, out var player))
+            {
+                Console.WriteLine($"invalid input from {from_client} client id");
+                return;
+            }
+
+            player.SetInput(inputs, rotation);
         }
 
         internal void MovePlayer(Player player, Vector2 input_direction)
@@ -197,7 +204,6 @@ namespace TFIServer
                     if (zones.Contains(ZoneBits.Stairs))
                     {
                         player.transit_state = Player.TransitState.Stairs;
-                        player.stair_level = map_handler_.GetStairLevelForPoint(point);
                         // The player is on the stairs, temporarily boost the z order.
                         return (newPosition, 3);
                     }
