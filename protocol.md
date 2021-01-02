@@ -45,6 +45,7 @@ Server Replies (TCP)
 	float rotation y
 	float rotation z
 	float rotation w
+	int32 health
 
 Server Sends (TCP)
     === Map Layer Row ===========
@@ -78,7 +79,7 @@ Client sends (UDP)
 
 Server will reply to each ClientPackets.playerMovement via  (UDP)
     ===== Player Position ===========
-    int32 packet lenghth (bytes)
+    int32 packet length (bytes)
     int32 ServerPackets.playerPosition (3)
 	int32 client id
 	float x
@@ -87,3 +88,8 @@ Server will reply to each ClientPackets.playerMovement via  (UDP)
 
 (above packet is sent to all clients)
 
+Server sends (UDP)
+	==== Player health ========
+	int32 packet lenght (bytes)
+	int32 ServerPackets.playerHealth (5)
+	int32 health
