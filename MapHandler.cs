@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Drawing;
-using System.Numerics;
 
 namespace TFIServer
 {
@@ -70,9 +69,10 @@ namespace TFIServer
 
         // Zones is one list of polygons per each ZoneId per object layer
         // so a poligon is zones[layer][zone][poligon]. 
-        private readonly List<List<List<PointF>>[]> zones_ = new List<List<List<PointF>>[]>();
+        private readonly List<List<List<Point>>[]> zones_
+            = new List<List<List<Point>>[]>();
 
-        private List<RectangleF> player_spawn_;
+        private List<Rectangle> player_spawn_;
 
         private int pixels_wide_;
         private int pixels_height_;
@@ -84,7 +84,9 @@ namespace TFIServer
         {
             foreach (var spawn in player_spawn_)
             {
-                yield return new RectangleF(spawn.X, spawn.Y, spawn.Width, spawn.Height);
+                yield return new RectangleF(
+                    spawn.X / scale_, spawn.Y / scale_,
+                    spawn.Width / scale_, spawn.Height / scale_);
             }
         }
 
@@ -157,7 +159,7 @@ namespace TFIServer
                 // Process object layers here.
                 int map_objects = 0;
 
-                player_spawn_ = new List<RectangleF>();
+                player_spawn_ = new List<Rectangle>();
 
                 foreach (var layer in layers.EnumerateArray())
                 {
@@ -166,7 +168,7 @@ namespace TFIServer
                         continue;
                     }
 
-                    var zone_layer = new List<List<PointF>>[5];
+                    var zone_layer = new List<List<Point>>[5];
 
                     var objects = layer.GetProperty("objects");
                     foreach (var obj in objects.EnumerateArray())
@@ -208,7 +210,7 @@ namespace TFIServer
 
                         if (zone_layer[ix] == null)
                         {
-                            zone_layer[ix] = new List<List<PointF>>();
+                            zone_layer[ix] = new List<List<Point>>();
                         }
                         zone_layer[ix].Add(PolygonFromJson(obj));
 
@@ -259,47 +261,47 @@ namespace TFIServer
             return (float)elem.GetProperty(name).GetDouble();
         }
 
-        private RectangleF RectFromJson(JsonElement obj)
+        private Rectangle RectFromJson(JsonElement obj)
         {
             var point = PointFromJson(obj);
             var size = SizeFromJson(obj);
-            return new RectangleF(point, size);
+            return new Rectangle(point, size);
         }
 
-        private List<PointF> PolygonFromJson(JsonElement obj)
+        private List<Point> PolygonFromJson(JsonElement obj)
         {
             var origin = PointFromJson(obj);
 
-            List<PointF> poly = new List<PointF>();
+            var poly = new List<Point>();
             var array = obj.GetProperty("polygon");
             foreach(var point in array.EnumerateArray())
             {
                 var rel_pt = RelPointFromJson(point);
-                poly.Add(new PointF(rel_pt.X + origin.X, rel_pt.Y + origin.Y));
+                poly.Add(new Point(rel_pt.X + origin.X, rel_pt.Y + origin.Y));
             }
 
             return poly;
         }
 
-        private PointF PointFromJson(JsonElement obj)
+        private Point PointFromJson(JsonElement obj)
         {
-            var x = GetJSonFloat(obj, "x");
-            var y = pixels_height_ - GetJSonFloat(obj, "y");
-            return new PointF(x / scale_, y / scale_);
+            var x = (int)GetJSonFloat(obj, "x");
+            var y = pixels_height_ - (int)GetJSonFloat(obj, "y");
+            return new Point(x, y);
         }
 
-        private PointF RelPointFromJson(JsonElement obj)
+        private Point RelPointFromJson(JsonElement obj)
         {
-            var x = GetJSonFloat(obj, "x");
-            var y = -GetJSonFloat(obj, "y");
-            return new PointF(x / scale_, y / scale_);
+            var x = (int)GetJSonFloat(obj, "x");
+            var y = -(int)GetJSonFloat(obj, "y");
+            return new Point(x, y);
         }
 
-        private SizeF SizeFromJson(JsonElement obj)
+        private Size SizeFromJson(JsonElement obj)
         {
-            var w = GetJSonFloat(obj, "width");
-            var h = GetJSonFloat(obj, "height");
-            return new SizeF(w / scale_, h / scale_);
+            var w = (int)GetJSonFloat(obj, "width");
+            var h = (int)GetJSonFloat(obj, "height");
+            return new Size(w, h);
         }
 
    
@@ -327,8 +329,9 @@ namespace TFIServer
         // triangle if we consider the 3 points forming one. Which turns
         // out is the cross product of the two vectors and positive values
         // means the points are in clockwise order.
-        private static float IsLeft(PointF l0, PointF l1, PointF pt)
+        private static int IsLeft(Point l0, Point l1, Point pt)
         {
+            // This might be faster if we convert to Vector<int> SIMD magic.
             return ((l1.X - l0.X) * (pt.Y - l0.Y) - (pt.X - l0.X) * (l1.Y - l0.Y));
         }
 
@@ -337,7 +340,7 @@ namespace TFIServer
         //      Input:   point = a point,
         //               poly[] = vertex points of a polygon V[n+1] with V[n]=V[0].
         //      Return:  wn = the winding number (== 0 only when point is outside)
-        private static int WindingNumber(PointF point, List<PointF> poly)
+        private static int WindingNumber(Point point, List<Point> poly)
         {
             int wn = 0;    // the  winding number counter.
 
@@ -371,7 +374,7 @@ namespace TFIServer
             return wn;
         }
 
-        private static bool InsidePolygonZone(List<List<PointF>> polygons, PointF point)
+        private static bool InsidePolygonZone(List<List<Point>> polygons, Point point)
         {
             if (polygons == null)
             {
@@ -401,10 +404,12 @@ namespace TFIServer
                 return zones;
             }
 
+            var int_point = new Point((int)(point.X * scale_), (int)(point.Y * scale_));
+
             foreach (var zid in (ZoneIds[]) Enum.GetValues(typeof(ZoneIds)))
             {
                 var polygons = zones_[level][zid.Index()];
-                if (InsidePolygonZone(polygons, point))
+                if (InsidePolygonZone(polygons, int_point))
                 {
                     zones |= zid.ToBit();
                 }
@@ -417,10 +422,12 @@ namespace TFIServer
         // -1 if no stairs found for the point.
         public int GetStairLevelForPoint(PointF point)
         {
+            var int_point = new Point((int)(point.X * scale_), (int)(point.Y * scale_));
+
             for (int level = 0; level != zones_.Count; level++)
             {
                 var polygons = zones_[level][ZoneIds.Stairs.Index()];
-                if (InsidePolygonZone(polygons, point))
+                if (InsidePolygonZone(polygons, int_point))
                 {
                     return level;
                 }
