@@ -10,6 +10,7 @@ Server replies (TCP)
 	int32 client id   (aka _fromClient)
 
     int32 map version   (MapHandler.mapVersion)
+	int32 pixels per unit
 	int32 # of layers
 	int32 # of rows
 	int32 # of columns

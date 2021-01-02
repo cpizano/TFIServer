@@ -58,10 +58,11 @@ namespace TFIServer
         public int Layers { get => map_.GetLength(0); }
         public int Row_count { get => map_.GetLength(1); }
         public int Column_count { get => map_.GetLength(2); }
+        public int Scale { get => scale_;  }
         public (int x, int y) Pixels_size { get => (pixels_wide_, pixels_height_); }
 
-        // The conversion from Unity units to pixels.
-        private readonly float scale_;
+        // The conversion from Tiled units to pixels.
+        private int scale_;
 
         // The map is [layer][rows][columns]. The |columns| is the count
         // of elements in the x coordinate, in other words the size of each row.
@@ -78,10 +79,6 @@ namespace TFIServer
 
         // The scale is used to scale all the loaded properties
         // that use distances. Tiled uses floating point pixels.
-        public MapHandler(int scale_int)
-        {
-            scale_ = scale_int;
-        }
 
         public IEnumerable<RectangleF> GetPlayerSpawns()
         {
@@ -127,6 +124,12 @@ namespace TFIServer
                 var tile_width = root.GetProperty("tilewidth").GetInt32();
                 var tile_height = root.GetProperty("tileheight").GetInt32();
 
+                if ((tile_height != tile_width) || (tile_width < 5) || (tile_height < 5))
+                {
+                    throw new Exception($"Map error: unsuported scale");
+                }
+
+                scale_ = tile_width;
                 pixels_wide_ = tile_width * column_count;
                 pixels_height_ = tile_height * row_count;
 
