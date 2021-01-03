@@ -58,7 +58,7 @@ namespace TFIServer
         public int Row_count { get => map_.GetLength(1); }
         public int Column_count { get => map_.GetLength(2); }
         public int Scale { get => scale_;  }
-        public (int x, int y) Pixels_size { get => (pixels_wide_, pixels_height_); }
+        public Size Pixels_size { get => new Size(pixels_wide_, pixels_height_); }
 
         // The conversion from Tiled units to pixels.
         private int scale_;
@@ -80,13 +80,13 @@ namespace TFIServer
         // The scale is used to scale all the loaded properties
         // that use distances. Tiled uses floating point pixels.
 
-        public IEnumerable<RectangleF> GetPlayerSpawns()
+        public IEnumerable<Rectangle> GetPlayerSpawns()
         {
             foreach (var spawn in player_spawn_)
             {
-                yield return new RectangleF(
-                    spawn.X / scale_, spawn.Y / scale_,
-                    spawn.Width / scale_, spawn.Height / scale_);
+                yield return new Rectangle(
+                    spawn.X, spawn.Y,
+                    spawn.Width, spawn.Height);
             }
         }
 
@@ -395,7 +395,7 @@ namespace TFIServer
         // if only evaluates up to finding one single hit of each type. For poligons
         // we use the optimized winding number which is a bit more expensive but can
         // handle complex poligons.
-        public ZoneBits GetZonesForPoint(PointF point, int level)
+        public ZoneBits GetZonesForPoint(Point point, int level)
         {
             ZoneBits zones = ZoneBits.None;
 
@@ -404,12 +404,10 @@ namespace TFIServer
                 return zones;
             }
 
-            var int_point = new Point((int)(point.X * scale_), (int)(point.Y * scale_));
-
             foreach (var zid in (ZoneIds[]) Enum.GetValues(typeof(ZoneIds)))
             {
                 var polygons = zones_[level][zid.Index()];
-                if (InsidePolygonZone(polygons, int_point))
+                if (InsidePolygonZone(polygons, point))
                 {
                     zones |= zid.ToBit();
                 }
@@ -420,14 +418,13 @@ namespace TFIServer
 
         // Returns 0 to N for the stair for a given point
         // -1 if no stairs found for the point.
-        public int GetStairLevelForPoint(PointF point)
+        public int GetStairLevelForPoint(Point point)
         {
-            var int_point = new Point((int)(point.X * scale_), (int)(point.Y * scale_));
-
+ 
             for (int level = 0; level != zones_.Count; level++)
             {
                 var polygons = zones_[level][ZoneIds.Stairs.Index()];
-                if (InsidePolygonZone(polygons, int_point))
+                if (InsidePolygonZone(polygons, point))
                 {
                     return level;
                 }

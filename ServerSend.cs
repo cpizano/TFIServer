@@ -10,14 +10,14 @@ namespace TFIServer
         public static int version = 0;
 
         #region Packets
-        public static void Welcome(int _toClient, int ppu, MapHandler map)
+        public static void Welcome(int _toClient, MapHandler map)
         {
             using (Packet _packet = new Packet((int)ServerPackets.welcome))
             {
                 _packet.Write(ServerSend.version);
                 _packet.Write(ServerHandle.version);
                 _packet.Write(_toClient);  // becomes client id.
-                _packet.Write(ppu);  // Pixels per unit of distance.
+                _packet.Write(map.Scale);  // Pixels per unit of distance.
                 _packet.Write(map.mapVersion);
                 _packet.Write(map.Layers);
                 _packet.Write(map.Row_count);
@@ -96,11 +96,12 @@ namespace TFIServer
         #endregion
 
         // Keep this last. It controls the protocol version via cheeky
-        // line numbers. Last was 104, before 115 and before 103.
+        // line numbers. Last was 105, before 104, before 115 and before 103.
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitProtocolVersion()
         {
-            // this comment makes it 104 so we don't collide an older version.
+            // this comment makes it 105 so we don't collide an older version.
+            // ..----
             version = Constants.GetLineNumer();
         }
     }

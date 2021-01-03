@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Drawing;
+using System.Numerics;
 
 namespace TFIServer
 {
@@ -13,12 +14,12 @@ namespace TFIServer
 
     public readonly struct PlayerState
     {
-        public readonly Vector2 position;
+        public readonly Point position;
         public readonly int z_level;
         public readonly int health;
         public readonly TransitState transit_state;
 
-        public PlayerState(Vector2 _pos, int _z_level, int _health, TransitState _state)
+        public PlayerState(Point _pos, int _z_level, int _health, TransitState _state)
         {
             position = _pos;
             z_level = _z_level;
@@ -34,18 +35,18 @@ namespace TFIServer
             transit_state = o.transit_state;
         }
 
-        public PlayerState(in PlayerState o, Vector2 _pos) : this(o)
+        public PlayerState(in PlayerState o, Point _pos) : this(o)
         {
             position = _pos;
         }
 
-        public PlayerState(in PlayerState o, int _z_level, Vector2 _pos) : this(o)
+        public PlayerState(in PlayerState o, int _z_level, Point _pos) : this(o)
         {
             position = _pos;
             z_level = _z_level;
         }
 
-        public PlayerState(in PlayerState o, TransitState ts, Vector2 _pos) : this(o)
+        public PlayerState(in PlayerState o, TransitState ts, Point _pos) : this(o)
         {
             transit_state = ts;
             position = _pos;

@@ -12,19 +12,21 @@ namespace TFIServer
         private Point input_direction;
         private PlayerState state;
 
-        public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
+        public int move_speed;
 
-        public Vector2 Position { get => state.position; }
+        public Point Position { get => state.position; }
         public TransitState TransitState { get => state.transit_state; }
         public int ZLevel { get => state.z_level;  }
         public int Health { get => state.health; }
 
 
-        public Player(int _id, string username, Vector2 spawn_position, int _z_level)
+        public Player(int _id, string username, Point spawn_position, int _z_level)
         {
             id = _id;
             user_name = username;
             state = new PlayerState(spawn_position, _z_level, 100, TransitState.Ground);
+            // FIXME
+            move_speed = (int)(2.4f * 32) / Constants.TICKS_PER_SEC;
         }
         public void Update(GameLogic game)
         {
@@ -37,8 +39,8 @@ namespace TFIServer
             // Vector3 forward = Vector3.Transform(new Vector3(0, 0, 1), rotation);
             // Vector3 right = Vector3.Normalize(Vector3.Cross(forward, new Vector3(0, 1, 0)));
 
-            Vector2 forward = Vector2.UnitY;
-            Vector2 right = -Vector2.UnitX;
+            var forward = new Size(0, 1);
+            var right = new Size(-1, 0);
 
             var move_direction = (right * input_direction.X) + (forward * input_direction.Y);
             var proposed_position = state.position + (move_direction * move_speed);

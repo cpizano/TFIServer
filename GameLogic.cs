@@ -26,10 +26,7 @@ namespace TFIServer
         private long last_ticks_ = 0;
         private GameLogicOptions options_ = 0;
         private readonly MapHandler map_handler_;
-        private RectangleF map_extents_;
-
-        // The client must have the same ppu value.
-        private readonly int pixels_per_unit_;
+        private Rectangle map_extents_;
 
         public GameLogic(string map)
         {
@@ -37,9 +34,7 @@ namespace TFIServer
             map_handler_ = new MapHandler();
             map_handler_.LoadMapJSON(map);
 
-            map_extents_ = new RectangleF(
-                0, 0, map_handler_.Column_count, map_handler_.Row_count);
-            pixels_per_unit_ = map_handler_.Scale;
+            map_extents_ = new Rectangle(Point.Empty, map_handler_.Pixels_size);
         }
 
         public void AddPlayer(int id, string player_name)
@@ -117,7 +112,7 @@ namespace TFIServer
         // Given a proposed new position and the current player state this function
         // computes the new state (which might include the new position) and a temporary
         // z-level boost.
-        internal (PlayerState?, int tz_boost) MovePlayer(in PlayerState state, Vector2 new_position)
+        internal (PlayerState?, int tz_boost) MovePlayer(in PlayerState state, Point new_position)
         {
             if (state.transit_state == TransitState.Frozen)
             {
@@ -126,9 +121,7 @@ namespace TFIServer
                 return (null, 0);
             }
             
-            var point = new PointF(new_position.X, new_position.Y);
-
-            if (!map_extents_.Contains(point)) {
+            if (!map_extents_.Contains(new_position)) {
                 // Keep the players in the map.
                 return (null, 0);
             }
@@ -148,7 +141,7 @@ namespace TFIServer
             // which level and to a threshold which can be the previously traversed
             // or the one at the other end.
 
-            var zones = map_handler_.GetZonesForPoint(point, state.z_level);
+            var zones = map_handler_.GetZonesForPoint(new_position, state.z_level);
  
             switch (state.transit_state)
             {
@@ -186,7 +179,7 @@ namespace TFIServer
                         return (new PlayerState(state, TransitState.Threshold, new_position), 0);
                     }
 
-                    var new_stair_level = map_handler_.GetStairLevelForPoint(point);
+                    var new_stair_level = map_handler_.GetStairLevelForPoint(new_position);
                     if (new_stair_level < 0)
                     {
                         // Can't exit stairs without a threshold.
@@ -215,7 +208,7 @@ namespace TFIServer
 
         internal void Connect(int id)
         {
-            ServerSend.Welcome(id, pixels_per_unit_, map_handler_);
+            ServerSend.Welcome(id, map_handler_);
         }
 
         internal void Disconnect(int id)
@@ -236,7 +229,7 @@ namespace TFIServer
             }
         }
 
-        internal Vector2 GetSpawnPoint()
+        internal Point GetSpawnPoint()
         {
             foreach (var spawn in map_handler_.GetPlayerSpawns())
             {
@@ -253,12 +246,12 @@ namespace TFIServer
             found:;
             }
             // No spawn point free! TODO: do something better.
-            return new Vector2(20, 20);
+            return new Point(200, 200);
         }
 
-        internal Vector2 GetMidRectVect(RectangleF r)
+        internal Point GetMidRectVect(Rectangle r)
         {
-            return new Vector2((r.X + r.Width / 2), (r.Y + r.Height / 2));
+            return new Point((r.X + r.Width / 2), (r.Y + r.Height / 2));
         }
 
         internal void DumpPlayers() 
