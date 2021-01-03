@@ -52,20 +52,20 @@ namespace TFIServer
                 _packet.Write(_player.id);
                 _packet.Write(_player.user_name);
                 _packet.Write(_player.Position);
-                _packet.Write(_player.z_level);
-                _packet.Write(_player.health);
+                _packet.Write(_player.ZLevel);
+                _packet.Write(_player.Health);
 
                 Server.SendTCPData(_toClient, _packet);
             }
         }
 
-        public static void PlayerPosition(Player _player)
+        public static void PlayerPosition(Player _player, int z_boost = 0)
         {
             using (Packet _packet = new Packet((int)ServerPackets.playerPosition))
             {
                 _packet.Write(_player.id);
                 _packet.Write(_player.Position);
-                _packet.Write(_player.z_level);
+                _packet.Write(z_boost > 0 ? z_boost : _player.ZLevel);
 
                 Server.SendUDPDataToAll(0, _packet);
             }
@@ -76,7 +76,7 @@ namespace TFIServer
             using (Packet _packet = new Packet((int)ServerPackets.playerHealth))
             {
                 _packet.Write(_player.id);
-                _packet.Write(_player.health);
+                _packet.Write(_player.Health);
 
                 Server.SendUDPDataToAll(_player.id, _packet);
             }

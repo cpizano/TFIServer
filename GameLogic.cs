@@ -48,7 +48,6 @@ namespace TFIServer
             map_handler_.SendMap(id);
 
             var new_player = new Player(id, player_name, GetSpawnPoint(), 0);
-            new_player.transit_state = Player.TransitState.Ground;
 
             // Tell new player about all other existing players
             foreach (Player player in players_.Values)
@@ -115,32 +114,12 @@ namespace TFIServer
             player.SetInput(inputs);
         }
 
-        internal Vector2? MovePlayer(Player player, Vector2 proposed_position)
+        // Given a proposed new position and the current player state this function
+        // computes the new state (which might include the new position) and a temporary
+        // z-level boost.
+        internal (PlayerState?, int tz_boost) MovePlayer(in PlayerState state, Vector2 new_position)
         {
-            (var pos, int tz_boost) = MovePlayerCore(player, proposed_position);
-            if (pos is Vector2 new_position)
-            {
-                if (tz_boost != 0)
-                {
-                    // Temporarily boost the Z level. Client side this only
-                    // controls the Z order which is handy.
-                    var zl = player.z_level;
-                    player.z_level = tz_boost;
-                    ServerSend.PlayerPosition(player);
-                    player.z_level = zl;
-                }
-                else
-                {
-                    ServerSend.PlayerPosition(player);
-                }
-                return new_position;
-            }
-            return null;
-        }
-
-        internal (Vector2?, int tz_boost) MovePlayerCore(Player player, Vector2 new_position)
-        {
-            if (player.transit_state == Player.TransitState.Frozen)
+            if (state.transit_state == TransitState.Frozen)
             {
                 // We should not see this because AddPlayer() sets
                 // the player to Ground transitstate.
@@ -169,47 +148,42 @@ namespace TFIServer
             // which level and to a threshold which can be the previously traversed
             // or the one at the other end.
 
-            var zones = map_handler_.GetZonesForPoint(point, player.z_level);
+            var zones = map_handler_.GetZonesForPoint(point, state.z_level);
  
-            switch (player.transit_state)
+            switch (state.transit_state)
             {
-                case Player.TransitState.Ground:
+                case TransitState.Ground:
                     if (zones == ZoneBits.None)
                     {
-                        return (new_position, 0);
+                        return (new PlayerState(state, new_position), 0);
                     }
                     if (zones.Contains(ZoneBits.Threshold))
                     {
-                        player.transit_state = Player.TransitState.Threshold;
-                        return (new_position, 0);
+                        return (new PlayerState(state, TransitState.Threshold, new_position), 0);
                     }
                     // All other zones (Boulders, Water deep) are not passable.
                     break;
-                case Player.TransitState.Threshold:
+                case TransitState.Threshold:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
-                        return (new_position, 0);
+                        return (new PlayerState(state, new_position), 0);
                     }
                     if (zones.Contains(ZoneBits.Stairs))
                     {
-                        player.transit_state = Player.TransitState.Stairs;
                         // The player is on the stairs, temporarily boost the z order.
-                        return (new_position, 3);
+                        return (new PlayerState(state, TransitState.Stairs, new_position), 3);
                     }
                     if (zones.Contains(ZoneBits.ClosedArea))
                     {
-                        player.transit_state = Player.TransitState.ClosedArea;
-                        return (new_position, 0);
+                        return (new PlayerState(state, TransitState.ClosedArea, new_position), 0);
                     }
                     // everything else means the player exited
-                    player.transit_state = Player.TransitState.Ground;
-                    return (new_position, 0);
+                    return (new PlayerState(state, TransitState.Ground, new_position), 0);
 
-                case Player.TransitState.Stairs:
+                case TransitState.Stairs:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
-                        player.transit_state = Player.TransitState.Threshold;
-                        return (new_position, 0);
+                        return (new PlayerState(state, TransitState.Threshold, new_position), 0);
                     }
 
                     var new_stair_level = map_handler_.GetStairLevelForPoint(point);
@@ -219,23 +193,16 @@ namespace TFIServer
                         return (null, 3);
                     }
 
-                    if (new_stair_level != player.z_level)
-                    {
-                        Console.WriteLine($"+ [{player.user_name}] level {new_stair_level}");
-                    }
+                    return (new PlayerState(state, new_stair_level, new_position), 3);
 
-                    player.z_level = new_stair_level;
-                    return (new_position, 3);
-
-                case Player.TransitState.ClosedArea:
+                case TransitState.ClosedArea:
                     if (zones.Contains(ZoneBits.Threshold))
                     {
-                        player.transit_state = Player.TransitState.Threshold;
-                        return (new_position, 0);
+                        return (new PlayerState(state, TransitState.Threshold, new_position), 0);
                     }
                     if (zones.Contains(ZoneBits.ClosedArea))
                     {
-                        return (new_position, 0);
+                        return (new PlayerState(state, new_position), 0);
                     }
                      break;
                 default:
@@ -305,7 +272,7 @@ namespace TFIServer
             StringBuilder sb = new StringBuilder(120);
             foreach (var p in players_.Values)
             {
-                sb.AppendLine($" id:{p.id}:{p.user_name} @ {p.Position} z:{p.z_level} s:{p.transit_state}");
+                sb.AppendLine($" id:{p.id}:{p.user_name} @ {p.Position} z:{p.ZLevel} s:{p.TransitState}");
             }
 
             Console.Write(sb.ToString());

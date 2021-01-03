@@ -6,40 +6,78 @@ using System.Text;
 
 namespace TFIServer
 {
+    public enum TransitState
+    {
+        Frozen,     // Cannot move at all.
+        Ground,     // Can move in the plane anywhere
+        Threshold,  // Entering or exiting a special zone
+        Stairs,     // Can move up and down.
+        ClosedArea, // Restricted to an area.
+    };
+
+    public readonly struct PlayerState
+    {
+        public readonly Vector2 position;
+        public readonly int z_level;
+        public readonly int health;
+        public readonly TransitState transit_state;
+
+        public PlayerState(Vector2 _pos, int _z_level, int _health, TransitState _state)
+        {
+            position = _pos;
+            z_level = _z_level;
+            health = _health;
+            transit_state = _state;
+        }
+
+        public PlayerState(in PlayerState o)
+        {
+            position = o.position;
+            z_level = o.z_level;
+            health = o.health;
+            transit_state = o.transit_state;
+        }
+
+        public PlayerState(in PlayerState o, Vector2 _pos) : this(o)
+        {
+            position = _pos;
+        }
+
+        public PlayerState(in PlayerState o, int _z_level, Vector2 _pos) : this(o)
+        {
+            position = _pos;
+            z_level = _z_level;
+        }
+
+        public PlayerState(in PlayerState o, TransitState ts, Vector2 _pos) : this(o)
+        {
+            transit_state = ts;
+            position = _pos;
+        }
+    }
+
     // This object methods should only be called from the gamethread.
     class Player
     {
-        public enum TransitState
-        {
-            Frozen,     // Cannot move at all.
-            Ground,     // Can move in the plane anywhere
-            Threshold,  // Entering or exiting a special zone
-            Stairs,     // Can move up and down.
-            ClosedArea, // Restricted to an area.
-        };
-
         public readonly int id;
         public readonly string user_name;
 
         private Point input_direction;
-        private Vector2 position;
-        public int z_level;
-        public int health;
-
-        public TransitState transit_state;
+        private PlayerState state;
 
         public float move_speed = 2.5f / Constants.TICKS_PER_SEC;
 
-        public Vector2 Position { get => position; }
+        public Vector2 Position { get => state.position; }
+        public TransitState TransitState { get => state.transit_state; }
+        public int ZLevel { get => state.z_level;  }
+        public int Health { get => state.health; }
+
 
         public Player(int _id, string username, Vector2 spawn_position, int _z_level)
         {
             id = _id;
             user_name = username;
-            position = spawn_position;
-            z_level = _z_level;
-            health = 100;
-            transit_state = TransitState.Frozen;
+            state = new PlayerState(spawn_position, _z_level, 100, TransitState.Ground);
         }
         public void Update(GameLogic game)
         {
@@ -56,12 +94,13 @@ namespace TFIServer
             Vector2 right = -Vector2.UnitX;
 
             var move_direction = (right * input_direction.X) + (forward * input_direction.Y);
-            var proposed_position = position + (move_direction * move_speed);
+            var proposed_position = state.position + (move_direction * move_speed);
 
-            var res = game.MovePlayer(this, proposed_position);
-            if (res is Vector2 new_position)
+            (var ns, int tz_boost) = game.MovePlayer(state, proposed_position);
+            if (ns is PlayerState new_state)
             {
-                position = new_position;
+                state = new_state;
+                ServerSend.PlayerPosition(this, tz_boost);
             }
         }
 
