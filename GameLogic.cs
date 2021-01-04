@@ -154,6 +154,14 @@ namespace TFIServer
                     {
                         return (new PlayerState(state, TransitState.Threshold, new_position), 0);
                     }
+                    if (zones.Contains(ZoneBits.WaterDeep))
+                    {
+                        // Move the player but reduce the health and get him underwater.
+                        // TODO: understand why -1 does not work like it used to, in which
+                        // the player will clip with half the tiles.
+                        var h = state.health - 1;
+                        return (new PlayerState(state, state.transit_state, new_position, h), -2);
+                    }
                     // All other zones (Boulders, Water deep) are not passable.
                     break;
                 case TransitState.Threshold:

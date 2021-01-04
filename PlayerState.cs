@@ -48,16 +48,24 @@ namespace TFIServer
             position = _pos;
         }
 
-        public PlayerState(in PlayerState o, int _z_level, Point _pos) : this(o)
+        public PlayerState(in PlayerState o, int _z_level, Point _pos, int _health = -1) : this(o)
         {
             position = _pos;
             z_level = _z_level;
+            if (health >= 0)
+            {
+                health = _health;
+            }
         }
 
-        public PlayerState(in PlayerState o, TransitState ts, Point _pos) : this(o)
+        public PlayerState(in PlayerState o, TransitState ts, Point _pos, int _health = -1) : this(o)
         {
             transit_state = ts;
             position = _pos;
+            if (health >= 0)
+            {
+                health = _health;
+            }
         }
 
         public IEnumerable<PropChanged> GetDelta(PlayerState future)

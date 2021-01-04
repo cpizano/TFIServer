@@ -65,20 +65,20 @@ namespace TFIServer
             {
                 _packet.Write(id);
                 _packet.Write(ps.position);
-                _packet.Write(z_boost > 0 ? z_boost : ps.z_level);
+                _packet.Write((z_boost != 0) ? z_boost : ps.z_level);
 
                 Server.SendUDPDataToAll(0, _packet);
             }
         }
 
-        public static void PlayerHealth(Player _player)
+        public static void PlayerHealth(int id, PlayerState ps)
         {
             using (Packet _packet = new Packet((int)ServerPackets.playerHealth))
             {
-                _packet.Write(_player.id);
-                _packet.Write(_player.Health);
+                _packet.Write(id);
+                _packet.Write(ps.health);
 
-                Server.SendUDPDataToAll(_player.id, _packet);
+                Server.SendUDPDataToAll(0, _packet);
             }
         }
 

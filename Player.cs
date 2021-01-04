@@ -56,6 +56,7 @@ namespace TFIServer
                             ServerSend.PlayerPosition(id, new_state, tz_boost);
                             break;
                         case PlayerState.PropChanged.Health:
+                            ServerSend.PlayerHealth(id, new_state);
                             break;
                         case PlayerState.PropChanged.TransitState:
                             break;
