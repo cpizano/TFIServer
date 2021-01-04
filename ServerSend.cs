@@ -59,13 +59,13 @@ namespace TFIServer
             }
         }
 
-        public static void PlayerPosition(Player _player, int z_boost = 0)
+        public static void PlayerPosition(int id, PlayerState ps, int z_boost = 0)
         {
             using (Packet _packet = new Packet((int)ServerPackets.playerPosition))
             {
-                _packet.Write(_player.id);
-                _packet.Write(_player.Position);
-                _packet.Write(z_boost > 0 ? z_boost : _player.ZLevel);
+                _packet.Write(id);
+                _packet.Write(ps.position);
+                _packet.Write(z_boost > 0 ? z_boost : ps.z_level);
 
                 Server.SendUDPDataToAll(0, _packet);
             }

@@ -48,8 +48,24 @@ namespace TFIServer
             (var ns, int tz_boost) = game.MovePlayer(state, proposed_position);
             if (ns is PlayerState new_state)
             {
+                foreach(var changed in state.GetDelta(new_state))
+                {
+                    switch (changed)
+                    {
+                        case PlayerState.PropChanged.Position:
+                            ServerSend.PlayerPosition(id, new_state, tz_boost);
+                            break;
+                        case PlayerState.PropChanged.Health:
+                            break;
+                        case PlayerState.PropChanged.TransitState:
+                            break;
+                        default:
+                            break;
+                    }
+
+                }
+
                 state = new_state;
-                ServerSend.PlayerPosition(this, tz_boost);
             }
         }
 

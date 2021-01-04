@@ -1,5 +1,6 @@
-﻿using System.Drawing;
-using System.Numerics;
+﻿using System.Collections.Generic;
+using System.Drawing;
+
 
 namespace TFIServer
 {
@@ -18,6 +19,13 @@ namespace TFIServer
         public readonly int z_level;
         public readonly int health;
         public readonly TransitState transit_state;
+
+        public enum PropChanged
+        {
+            Position,
+            Health,
+            TransitState,
+        }
 
         public PlayerState(Point _pos, int _z_level, int _health, TransitState _state)
         {
@@ -51,5 +59,22 @@ namespace TFIServer
             transit_state = ts;
             position = _pos;
         }
+
+        public IEnumerable<PropChanged> GetDelta(PlayerState future)
+        {
+            if (position != future.position || z_level != future.z_level)
+            {
+                yield return PropChanged.Position;
+            }
+            if (health != future.health)
+            {
+                yield return PropChanged.Health;
+            }
+            if (transit_state != future.transit_state)
+            {
+                yield return PropChanged.TransitState;
+            }
+        }
+
     }
 }
